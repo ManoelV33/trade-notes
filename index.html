@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Trade Notes</title>
-<meta name="theme-color" content="#0A0A0B">
+<meta name="theme-color" content="#000814">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trade Notes">
@@ -18,9 +18,9 @@
 @font-face{font-family:Manrope;font-weight:700;font-display:swap;src:url(fonts/manrope-latin-700-normal.woff2) format("woff2")}
 /* Layout: app de uma coluna — cabeçalho, conteúdo da aba, barra de abas fixa embaixo com + central */
 :root{
-  --bg:#0A0A0B;--surf:#151518;--surf2:#222227;--line:#26262C;
-  --ink:#EDEDF0;--muted:#8E8E98;--dim:#5E5E68;
-  --acc:#FF8A1F;--on:#111111;--accS:rgba(255,138,31,.14);
+  --bg:#000814;--surf:#001533;--surf2:#00204D;--line:#0B2B57;
+  --ink:#EDF2FA;--muted:#8FA3C0;--dim:#4E6385;
+  --acc:#1C6CFF;--on:#FFFFFF;--accS:rgba(28,108,255,.16);
   --up:#3DDC84;--upS:rgba(61,220,132,.14);--dn:#FF6B5B;--dnS:rgba(255,107,91,.15);
   --f:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:dark;
@@ -46,7 +46,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .pos{color:var(--up)}.neg{color:var(--dn)}
 .card{background:var(--surf);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
 button.card{border:0;text-align:left;width:100%}
-button.card:active{background:#1B1B1F}
+button.card:active{background:#002050}
 .ch{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .ch>b{font-size:14.5px}
 .tk{display:flex;align-items:center;gap:10px;min-width:0}
@@ -55,8 +55,8 @@ button.card:active{background:#1B1B1F}
 .pill{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
 .pill.g{background:var(--upS);color:var(--up)}.pill.r{background:var(--dnS);color:var(--dn)}.pill.o{background:var(--accS);color:var(--acc)}.pill.n{background:var(--surf2);color:var(--muted)}
 .ladder{position:relative;height:38px;margin:0 6px}
-.ladder .bar{position:absolute;left:0;right:0;top:11px;height:6px;border-radius:3px;display:flex;overflow:hidden}
-.ladder .bar i{display:block;height:100%}
+.ladder .bar{position:absolute;left:0;right:0;top:11px;height:6px;border-radius:3px;overflow:hidden;background:var(--surf2)}
+.ladder .bar i{position:absolute;top:0;bottom:0}
 .ladder .tick{position:absolute;top:6px;width:2px;height:16px;background:var(--ink);transform:translateX(-1px)}
 .ladder .now{position:absolute;top:7px;width:14px;height:14px;border-radius:50%;background:var(--acc);border:3px solid var(--surf);transform:translateX(-7px)}
 .ladder .lb{position:absolute;top:24px;font-size:10.5px;color:var(--muted);white-space:nowrap;font-weight:600}
@@ -78,7 +78,15 @@ button.card:active{background:#1B1B1F}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chips button{border:0;font-size:13px;font-weight:700;padding:8px 12px;border-radius:999px;background:var(--surf2);color:var(--muted)}
 .chips button[aria-pressed="true"]{background:var(--acc);color:var(--on)}
-.calc{background:rgba(255,138,31,.09);border:1px solid rgba(255,138,31,.35);border-radius:14px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3 .btn{padding:0 6px;font-size:13.5px;white-space:nowrap}
+.toggles{display:flex;gap:8px}
+.toggles button{flex:1;display:flex;align-items:center;gap:10px;border:0;border-radius:12px;background:var(--surf2);color:var(--muted);font-weight:700;font-size:14px;padding:10px 12px}
+.toggles button[aria-pressed="true"]{color:var(--ink)}
+.sw{position:relative;width:38px;height:22px;border-radius:11px;background:#2A4470;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#C9D4E5;transition:transform .15s}
+[aria-pressed="true"] .sw{background:var(--acc)}
+[aria-pressed="true"] .sw::after{transform:translateX(16px);background:#fff}
+.calc{background:rgba(28,108,255,.10);border:1px solid rgba(28,108,255,.40);border-radius:14px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .calc div{display:flex;flex-direction:column;min-width:0}.calc span{font-size:11.5px;color:var(--muted);font-weight:600}.calc b{font-size:17px;white-space:nowrap}
 .err{margin:0;color:var(--dn);font-size:13px;font-weight:600}
 .hint{margin:0;color:var(--muted);font-size:12.5px}
@@ -174,24 +182,25 @@ const byId=id=>DB.trades.find(t=>t.id===id);
 /* ---------- cálculos de uma operação ---------- */
 function calc(t){
   const ev=[...t.eventos].sort((a,b)=>(a.data+a.ord).localeCompare(b.data+b.ord));
-  let qIn=0,cost=0,fees=0,qOut=0,realized=0,stop=t.plano.stop,firstStop=t.plano.stop,parciais=0,price=null,cotData=null;
+  let qIn=0,cost=0,fees=0,qOut=0,realized=0,stop=t.plano.stop??null,firstStop=t.plano.stop??null,alvo=t.plano.alvo??null,parciais=0,price=null,cotData=null;
   for(const e of ev){
     fees+=e.taxas||0;
     if(e.tipo==="entrada"){qIn+=e.qtd;cost+=e.qtd*e.preco;price=e.preco;cotData=null}
     else if(e.tipo==="parcial"||e.tipo==="saida"){const avg=qIn?cost/qIn:0;realized+=(e.preco-avg)*e.qtd;qOut+=e.qtd;price=e.preco;cotData=null;if(e.tipo==="parcial")parciais++}
-    else if(e.tipo==="stop"){stop=e.para}
+    else if(e.tipo==="stop"){stop=e.para;if(firstStop==null)firstStop=e.para}
+    else if(e.tipo==="alvo"){alvo=e.para}
     else if(e.tipo==="cotacao"){price=e.preco;cotData=e.data}
   }
   const avg=qIn?cost/qIn:0,open=Math.max(0,qIn-qOut);
   const unreal=t.status==="aberta"&&price!=null?(price-avg)*open:0;
   const total=realized+unreal-fees;
-  const riskIni=Math.max(0,(avg-firstStop)*qIn);
+  const riskIni=firstStop!=null?Math.max(0,(avg-firstStop)*qIn):0;
   const R=riskIni>0?total/riskIni:null;
-  const riskNow=t.status==="aberta"?Math.max(0,(avg-stop)*open):0;
+  const riskNow=t.status!=="aberta"?0:(stop!=null?Math.max(0,(avg-stop)*open):null);
   const entradaData=ev.find(e=>e.tipo==="entrada")?.data||t.criado;
   const saida=ev.filter(e=>e.tipo==="saida").pop();
   const pctRes=cost>0?total/cost*100:0;
-  return {avg,qIn,open,stop,price,cotData,realized,unreal,fees,total,R,riskIni,riskNow,parciais,entradaData,saidaData:saida?.data||null,pctRes,ev};
+  return {avg,qIn,open,stop,alvo,firstStop,price,cotData,realized,unreal,fees,total,R,riskIni,riskNow,parciais,entradaData,saidaData:saida?.data||null,pctRes,ev};
 }
 
 /* ---------- navegação ---------- */
@@ -217,50 +226,68 @@ addEventListener("hashchange",route);
 
 /* ---------- régua de preço ---------- */
 function ladder(t,c){
-  const lo=Math.min(c.stop,c.avg,c.price??c.avg),hi=Math.max(t.plano.alvo,c.price??0,c.avg);
-  const span=hi-lo||1,p=v=>Math.min(100,Math.max(0,(v-lo)/span*100));
-  const ps=p(c.stop),pe=p(c.avg),pa=p(t.plano.alvo),pn=c.price!=null?p(c.price):null;
-  const redW=Math.max(0,pe-ps);
-  let lbl=`<span class="lb" style="left:0">stop ${num(c.stop)}</span><span class="lb" style="right:0">alvo ${num(t.plano.alvo)}</span>`;
-  if(pn!=null&&pn>14&&pn<86)lbl+=`<span class="lb" style="left:${pn}%;transform:translateX(-50%);color:var(--acc)">${num(c.price)}</span>`;
-  return `<div class="ladder"><div class="bar"><i style="width:${ps}%;background:transparent"></i><i style="width:${redW}%;background:var(--dn)"></i><i style="flex:1;background:var(--up);max-width:${Math.max(0,pa-Math.max(ps,pe))}%"></i></div>
-   <span class="tick" style="left:${ps}%"></span>${redW>0.5?`<span class="tick" style="left:${pe}%;opacity:.6"></span>`:""}<span class="tick" style="left:${pa}%"></span>${pn!=null?`<span class="now" style="left:${pn}%"></span>`:""}${lbl}</div>`;
+  const pts=[c.avg];if(c.stop!=null)pts.push(c.stop);if(c.alvo!=null)pts.push(c.alvo);if(c.price!=null)pts.push(c.price);
+  let lo=Math.min(...pts),hi=Math.max(...pts);if(hi-lo<1e-9){lo-=1;hi+=1}
+  const p=v=>(v-lo)/(hi-lo)*100;
+  const pe=p(c.avg),ps=c.stop!=null?p(c.stop):null,pa=c.alvo!=null?p(c.alvo):null,pn=c.price!=null?p(c.price):null;
+  let seg="";
+  if(ps!=null&&pe>ps)seg+=`<i style="left:${ps}%;width:${pe-ps}%;background:var(--dn)"></i>`;
+  if(pa!=null){const a0=Math.max(pe,ps??pe);if(pa>a0)seg+=`<i style="left:${a0}%;width:${pa-a0}%;background:var(--up)"></i>`}
+  else if(pn!=null&&Math.abs(pn-pe)>.01){const a=Math.min(pe,pn),b=Math.max(pe,pn);seg+=`<i style="left:${a}%;width:${b-a}%;background:${pn>pe?"var(--up)":"var(--dn)"}"></i>`}
+  let ticks="";
+  if(ps!=null)ticks+=`<span class="tick" style="left:${ps}%"></span>`;
+  ticks+=`<span class="tick" style="left:${pe}%;opacity:.5"></span>`;
+  if(pa!=null)ticks+=`<span class="tick" style="left:${pa}%"></span>`;
+  const L=[];
+  if(ps!=null)L.push([ps,`stop ${num(c.stop)}`,""]);
+  if(pa!=null)L.push([pa,`alvo ${num(c.alvo)}`,""]);
+  if(pn!=null)L.push([pn,num(c.price),"var(--acc)"]);
+  L.push([pe,`entr. ${num(c.avg)}`,""]);
+  const placed=[];let lbl="";
+  for(const [x,txt,col] of L){if(placed.some(q=>Math.abs(q-x)<26))continue;placed.push(x);
+    const pos=x<13?"left:0":x>87?"right:0":`left:${x}%;transform:translateX(-50%)`;
+    lbl+=`<span class="lb" style="${pos}${col?`;color:${col}`:""}">${txt}</span>`}
+  return `<div class="ladder"><div class="bar">${seg}</div>${ticks}${pn!=null?`<span class="now" style="left:${pn}%"></span>`:""}${lbl}</div>`;
 }
 const logo=a=>`<div class="logo">${esc(a.replace(/\d+$/,"").slice(0,4))}</div>`;
-function rPill(R){if(R==null)return `<span class="pill n">— R</span>`;return `<span class="pill ${R>0.005?"g":R<-0.005?"r":"n"}">${rfmt(R)}</span>`}
+function rPill(c){if(c.firstStop==null)return `<span class="pill n">sem stop</span>`;const R=c.R;if(R==null)return `<span class="pill n">— R</span>`;return `<span class="pill ${R>0.005?"g":R<-0.005?"r":"n"}">${rfmt(R)}</span>`}
 
 /* ---------- ABERTAS ---------- */
 function renderAbertas(){
   const open=DB.trades.filter(t=>t.status==="aberta").map(t=>({t,c:calc(t)})).sort((a,b)=>b.c.entradaData.localeCompare(a.c.entradaData));
-  const tot=open.reduce((s,x)=>s+x.c.total,0),risk=open.reduce((s,x)=>s+x.c.riskNow,0);
+  const tot=open.reduce((s,x)=>s+x.c.total,0),risk=open.reduce((s,x)=>s+(x.c.riskNow||0),0),semStop=open.filter(x=>x.c.riskNow==null).length;
   $("v-abertas").innerHTML=`
   <div class="top"><div><div class="brand">Trade<b>Notes</b></div><div class="sub">${open.length?`${open.length} posição(ões) aberta(s)`:"Nenhuma posição aberta"}</div></div></div>
-  ${open.length?`<div class="kpis"><div class="k"><span>Resultado das abertas</span><b class="${cls(tot)}">${smoney(tot)}</b></div><div class="k"><span>Risco em jogo</span><b>${money(risk)}</b></div></div>`:""}
+  ${open.length?`<div class="kpis"><div class="k"><span>Resultado das abertas</span><b class="${cls(tot)}">${smoney(tot)}</b></div><div class="k"><span>Risco em jogo${semStop?` · ${semStop} sem stop`:""}</span><b>${money(risk)}</b></div></div>`:""}
   ${open.map(({t,c})=>{
-    const ate=c.price?(t.plano.alvo-c.price)/c.price*100:null;
+    const ate=c.price&&c.alvo!=null?(c.alvo-c.price)/c.price*100:null;
     return `<button class="card" type="button" data-go="op-${t.id}">
-     <div class="ch"><div class="tk">${logo(t.ativo)}<div><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${c.open} de ${c.qIn} ${t.tipo==="FII"?"cotas":"ações"}</small></div></div>${rPill(c.R)}</div>
+     <div class="ch"><div class="tk">${logo(t.ativo)}<div><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${c.open} de ${c.qIn} ${t.tipo==="FII"?"cotas":"ações"}</small></div></div>${rPill(c)}</div>
      ${ladder(t,c)}
-     <div class="meta"><div>Resultado<b class="${cls(c.total)}">${smoney(c.total)}</b></div><div>Até o alvo<b>${ate==null?"—":pct(ate)}</b></div><div>${c.parciais?"Parciais":"Cotação"}<b>${c.parciais?`${c.parciais} feita(s)`:(c.cotData?dateBR(c.cotData):"da entrada")}</b></div></div>
+     <div class="meta"><div>Resultado<b class="${cls(c.total)}">${smoney(c.total)}</b></div><div>Até o alvo<b>${c.alvo==null?"sem alvo":ate==null?"—":pct(ate)}</b></div><div>${c.parciais?"Parciais":"Cotação"}<b>${c.parciais?`${c.parciais} feita(s)`:(c.cotData?dateBR(c.cotData):"da entrada")}</b></div></div>
     </button>`}).join("")}
   ${open.length?"":`<div class="empty"><span>Registre sua primeira operação: o app calcula o risco, a quantidade e a relação risco/retorno.</span><a class="btn sm" href="#nova">Nova operação</a></div>`}`;
 }
 
 /* ---------- NOVA OPERAÇÃO ---------- */
-const NF={tipo:"Ação",setup:""};
+const NF={tipo:"Ação",setup:"",useStop:true,useAlvo:true};
 function renderNova(){
-  const s=DB.settings;NF.tipo="Ação";NF.setup=s.setups[0]||"";
+  const s=DB.settings;NF.tipo="Ação";NF.setup=s.setups[0]||"";NF.useStop=s.useStop!==false;NF.useAlvo=s.useAlvo!==false;
   $("v-nova").innerHTML=`
   <div class="top"><a class="ib" href="#${backTo}" aria-label="Fechar">×</a><div class="h1">Nova operação</div><span style="width:42px"></span></div>
   <div class="row2"><div class="f"><label for="nAtivo">Ativo</label><input id="nAtivo" placeholder="ITUB4" autocapitalize="characters" autocomplete="off" maxlength="12"></div>
    <div class="f"><label for="nData">Data da entrada</label><input id="nData" type="date" value="${todayISO()}"></div></div>
   <div class="f"><span class="lab">Tipo</span><div class="chips" id="nTipo">${["Ação","ETF","BDR","FII"].map(x=>`<button type="button" data-v="${x}" aria-pressed="${x==="Ação"}">${x}</button>`).join("")}</div></div>
   <div class="f"><span class="lab">Setup</span><div class="chips" id="nSetup">${s.setups.map((x,i)=>`<button type="button" data-v="${esc(x)}" aria-pressed="${i===0}">${esc(x)}</button>`).join("")}<button type="button" data-new="1">+ novo</button></div></div>
-  <div class="row3"><div class="f"><label for="nEnt">Entrada</label><input id="nEnt" inputmode="decimal" placeholder="0,00"></div>
-   <div class="f"><label for="nStop" style="color:var(--dn)">Stop</label><input id="nStop" inputmode="decimal" placeholder="0,00"></div>
-   <div class="f"><label for="nAlvo" style="color:var(--up)">Alvo</label><input id="nAlvo" inputmode="decimal" placeholder="0,00"></div></div>
-  <div class="row2"><div class="f"><label for="nCart">Carteira (R$)</label><input id="nCart" inputmode="decimal" placeholder="opcional" value="${s.carteira?num(s.carteira):""}"></div>
+  <div class="f"><span class="lab">Definir agora</span><div class="toggles" id="nOpt">
+   <button type="button" data-o="useStop" aria-pressed="${NF.useStop}"><span class="sw"></span>Stop</button>
+   <button type="button" data-o="useAlvo" aria-pressed="${NF.useAlvo}"><span class="sw"></span>Alvo</button></div></div>
+  <div class="row3" id="nPx"><div class="f"><label for="nEnt">Entrada</label><input id="nEnt" inputmode="decimal" placeholder="0,00"></div>
+   <div class="f" id="fStop"><label for="nStop" style="color:var(--dn)">Stop</label><input id="nStop" inputmode="decimal" placeholder="0,00"></div>
+   <div class="f" id="fAlvo"><label for="nAlvo" style="color:var(--up)">Alvo</label><input id="nAlvo" inputmode="decimal" placeholder="0,00"></div></div>
+  <div class="row2" id="nRiskRow"><div class="f"><label for="nCart">Carteira (R$)</label><input id="nCart" inputmode="decimal" placeholder="opcional" value="${s.carteira?num(s.carteira):""}"></div>
    <div class="f"><label for="nRisco">Risco por operação (%)</label><input id="nRisco" inputmode="decimal" value="${num(s.riscoPct,s.riscoPct%1?1:0)}"></div></div>
+  <p class="hint" id="nNoStop" hidden>Sem stop, o app não calcula o risco, a quantidade sugerida nem o resultado em R. Dá para definir o stop depois, na gestão da operação.</p>
   <div class="calc" id="nCalc"></div>
   <div class="row2"><div class="f"><label for="nQtd">Quantidade</label><input id="nQtd" inputmode="numeric" placeholder="0"></div>
    <div class="f"><label for="nTax">Taxas da compra (R$)</label><input id="nTax" inputmode="decimal" placeholder="0,00"></div></div>
@@ -270,24 +297,29 @@ function renderNova(){
   <button class="btn" type="button" id="nSave">Registrar entrada</button>`;
   let qtdTouched=false;
   const upd=()=>{
-    const e=parseNum($("nEnt").value),st=parseNum($("nStop").value),a=parseNum($("nAlvo").value),cart=parseNum($("nCart").value),rp=parseNum($("nRisco").value);
-    const rps=Math.round((e-st)*1e6)/1e6,rr=(a-e)/rps;
-    let sug=null;if(cart>0&&rp>0&&rps>0){sug=Math.floor(cart*rp/100/rps+1e-9);if(NF.tipo!=="FII"&&false)sug=Math.floor(sug/100)*100}
+    const e=parseNum($("nEnt").value),st=NF.useStop?parseNum($("nStop").value):NaN,a=NF.useAlvo?parseNum($("nAlvo").value):NaN,cart=parseNum($("nCart").value),rp=parseNum($("nRisco").value);
+    $("fStop").hidden=!NF.useStop;$("fAlvo").hidden=!NF.useAlvo;$("nRiskRow").hidden=!NF.useStop;$("nNoStop").hidden=NF.useStop;
+    $("nPx").style.gridTemplateColumns=`repeat(${1+NF.useStop+NF.useAlvo},minmax(0,1fr))`;
+    const okS=NF.useStop&&e>0&&st>0&&st<e,okA=NF.useAlvo&&e>0&&a>e;
+    const rps=okS?Math.round((e-st)*1e6)/1e6:NaN;
+    let sug=null;if(okS&&cart>0&&rp>0)sug=Math.floor(cart*rp/100/rps+1e-9);
     if(!qtdTouched&&sug!=null)$("nQtd").value=sug;
     const q=parseNum($("nQtd").value)||0;
-    const ok=e>0&&st>0&&a>0&&st<e&&a>e;
-    $("nCalc").innerHTML=`
-     <div><span>Risco por ação</span><b>${ok?money(rps):"—"}</b></div>
-     <div><span>Risco/retorno</span><b style="color:var(--acc)">${ok?"1 : "+num(rr,rr<10?1:0):"—"}</b></div>
-     <div><span>Quantidade sugerida</span><b>${sug!=null&&ok?sug.toLocaleString("pt-BR"):"—"}</b></div>
-     <div><span>Valor da posição</span><b>${ok&&q?money(q*e):"—"}</b></div>
-     <div><span>Perda se der stop</span><b class="neg">${ok&&q?"−"+money(q*rps):"—"}</b></div>
-     <div><span>Ganho no alvo</span><b class="pos">${ok&&q?"+"+money(q*(a-e)):"—"}</b></div>
-     ${cart>0&&ok&&q?`<div style="grid-column:1/-1"><span>Risco real da quantidade</span><b>${num(q*rps/cart*100,2)}% da carteira</b></div>`:""}`;
+    const rows=[];
+    if(NF.useStop)rows.push(["Risco por ação",okS?money(rps):"—"]);
+    if(NF.useStop&&NF.useAlvo){const rr=(a-e)/rps;rows.push(["Risco/retorno",okS&&okA?"1 : "+num(rr,rr<10?1:0):"—","","acc"])}
+    if(NF.useStop)rows.push(["Quantidade sugerida",sug!=null?sug.toLocaleString("pt-BR"):"—"]);
+    rows.push(["Valor da posição",e>0&&q?money(q*e):"—"]);
+    if(NF.useStop)rows.push(["Perda se der stop",okS&&q?"−"+money(q*rps):"—","","neg"]);
+    if(NF.useAlvo)rows.push(["Ganho no alvo",okA&&q?"+"+money(q*(a-e)):"—","","pos"]);
+    if(okS&&cart>0&&q)rows.push(["Risco real da quantidade",num(q*rps/cart*100,2)+"% da carteira","full"]);
+    if(rows.length%2&&rows[rows.length-1][2]!=="full")rows[rows.length-1][2]="full";
+    $("nCalc").innerHTML=rows.map(([l,v,full,c])=>`<div${full==="full"?' style="grid-column:1/-1"':""}><span>${l}</span><b class="${c==="acc"?"":c||""}"${c==="acc"?' style="color:var(--acc)"':""}>${v}</b></div>`).join("");
   };
   ["nEnt","nStop","nAlvo","nCart","nRisco"].forEach(id=>$(id).addEventListener("input",upd));
   $("nQtd").addEventListener("input",()=>{qtdTouched=$("nQtd").value!=="";upd()});
   $("nAtivo").addEventListener("input",e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p)});
+  $("nOpt").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.o;NF[k]=!NF[k];DB.settings[k]=NF[k];b.setAttribute("aria-pressed",NF[k]);upd()};
   $("nTipo").onclick=e=>{const b=e.target.closest("button");if(!b)return;NF.tipo=b.dataset.v;[...$("nTipo").children].forEach(x=>x.setAttribute("aria-pressed",x===b));upd()};
   $("nSetup").onclick=e=>{const b=e.target.closest("button");if(!b)return;
     if(b.dataset.new){openSheet(`<div class="handle"></div><h2 id="shTitle">Novo setup</h2><div class="f"><label for="sNome">Nome do setup</label><input id="sNome" maxlength="30" placeholder="Ex.: Pivô de alta" style="font-weight:600"></div><button class="btn" type="button" id="sOk">Adicionar</button>`);
@@ -303,26 +335,27 @@ function saveNova(){
   const e=parseNum($("nEnt").value),st=parseNum($("nStop").value),a=parseNum($("nAlvo").value),q=Math.floor(parseNum($("nQtd").value)),tax=parseNum($("nTax").value)||0;
   const err=m=>{$("nErr").textContent=m;$("nErr").hidden=false;return false};
   if(!ativo)return err("Informe o código do ativo, por exemplo ITUB4.");
-  if(!(e>0)||!(st>0)||!(a>0))return err("Preencha entrada, stop e alvo.");
-  if(!(st<e))return err("O stop precisa ficar abaixo da entrada (operação de compra).");
-  if(!(a>e))return err("O alvo precisa ficar acima da entrada.");
+  if(!(e>0))return err("Informe o preço de entrada.");
+  if(NF.useStop){if(!(st>0))return err("Informe o stop, ou desligue a opção Stop.");if(!(st<e))return err("O stop precisa ficar abaixo da entrada (operação de compra).")}
+  if(NF.useAlvo){if(!(a>0))return err("Informe o alvo, ou desligue a opção Alvo.");if(!(a>e))return err("O alvo precisa ficar acima da entrada.")}
   if(!(q>0))return err("Informe a quantidade comprada.");
-  const cart=parseNum($("nCart").value),rp=parseNum($("nRisco").value);
-  if(cart>0)DB.settings.carteira=cart;if(rp>0)DB.settings.riscoPct=rp;
+  if(NF.useStop){const cart=parseNum($("nCart").value),rp=parseNum($("nRisco").value);if(cart>0)DB.settings.carteira=cart;if(rp>0)DB.settings.riscoPct=rp}
+  DB.settings.useStop=NF.useStop;DB.settings.useAlvo=NF.useAlvo;
   const t={id:uid(),ativo,tipo:NF.tipo,moeda:"BRL",setup:NF.setup,status:"aberta",criado:new Date().toISOString(),
-    plano:{entrada:e,stop:st,alvo:a,parcial:$("nParc").value.trim()},
+    plano:{entrada:e,stop:NF.useStop?st:null,alvo:NF.useAlvo?a:null,parcial:$("nParc").value.trim()},
     eventos:[{id:uid(),ord:"0",tipo:"entrada",data,preco:e,qtd:q,taxas:tax,texto:$("nMot").value.trim()}]};
   DB.trades.push(t);
   if(save()){toast("Operação registrada");location.hash="op-"+t.id}
 }
 
 /* ---------- DETALHE / GESTÃO ---------- */
-const EVINFO={entrada:["var(--ink)","Entrada"],parcial:["var(--up)","Parcial"],saida:["var(--acc)","Encerramento"],stop:["var(--acc)","Stop movido"],nota:["var(--muted)","Nota"],cotacao:["#5B95FF","Cotação atualizada"]};
+const EVINFO={entrada:["var(--ink)","Entrada"],parcial:["var(--up)","Parcial"],saida:["var(--acc)","Encerramento"],stop:["var(--acc)","Stop movido"],nota:["var(--muted)","Nota"],cotacao:["#4FD1C5","Cotação atualizada"],alvo:["var(--up)","Alvo"]};
 function evRow(t,e,c){
   const [col,title]=EVINFO[e.tipo];let main=title,right="";
   if(e.tipo==="entrada"){main=`Entrada: ${e.qtd} ${t.tipo==="FII"?"cotas":"ações"}`;right=num(e.preco)}
   if(e.tipo==="parcial"||e.tipo==="saida"){main=`${e.tipo==="parcial"?"Parcial":"Encerrou"}: vendeu ${e.qtd}`;right=num(e.preco)}
-  if(e.tipo==="stop"){main=`Stop movido para ${num(e.para)}`;right=`${num(e.de)} → ${num(e.para)}`}
+  if(e.tipo==="stop"){main=e.de==null?`Stop definido em ${num(e.para)}`:`Stop movido para ${num(e.para)}`;right=e.de==null?num(e.para):`${num(e.de)} → ${num(e.para)}`}
+  if(e.tipo==="alvo"){main=e.de==null?`Alvo definido em ${num(e.para)}`:`Alvo mudou para ${num(e.para)}`;right=e.de==null?num(e.para):`${num(e.de)} → ${num(e.para)}`}
   if(e.tipo==="cotacao"){right=num(e.preco)}
   const sub=[dateBR(e.data),e.texto,e.taxas?`taxas ${money(e.taxas)}`:""].filter(Boolean).join(" · ");
   return `<button class="ev" type="button" data-ev="${e.id}"><i class="d" style="background:${col}"></i><div><b>${esc(main)}</b><small>${esc(sub)}</small></div><div class="x">${esc(right)}</div></button>`;
@@ -332,17 +365,17 @@ function renderOp(id){
   const c=calc(t),aberta=t.status==="aberta";
   const evs=[...c.ev].reverse();
   $("v-op").innerHTML=`
-  <div class="top"><a class="ib" href="#${backTo}" aria-label="Voltar">‹</a><div style="text-align:center;min-width:0"><div class="h1" style="font-size:18px">${esc(t.ativo)}</div><div class="sub">${esc([t.tipo,t.setup].filter(Boolean).join(" · "))}${aberta?"":" · encerrada"}</div></div>${rPill(c.R)}</div>
+  <div class="top"><a class="ib" href="#${backTo}" aria-label="Voltar">‹</a><div style="text-align:center;min-width:0"><div class="h1" style="font-size:18px">${esc(t.ativo)}</div><div class="sub">${esc([t.tipo,t.setup].filter(Boolean).join(" · "))}${aberta?"":" · encerrada"}</div></div>${rPill(c)}</div>
   <div class="kpis">
    <div class="k"><span>Resultado${aberta?" (com abertas)":""}</span><b class="${cls(c.total)}">${smoney(c.total)}</b></div>
    <div class="k"><span>${aberta?"Posição atual":"Retorno"}</span><b>${aberta?`${c.open} ${t.tipo==="FII"?"cotas":"ações"}`:pct(c.pctRes)}</b></div>
    <div class="k"><span>Preço médio</span><b>${num(c.avg)}</b></div>
-   <div class="k"><span>${aberta?"Stop atual":"Risco inicial"}</span><b>${aberta?num(c.stop):money(c.riskIni)}</b></div>
+   <div class="k"><span>${aberta?"Stop atual":"Risco inicial"}</span><b>${aberta?(c.stop!=null?num(c.stop):'<span style="color:var(--muted)">sem stop</span>'):(c.riskIni>0?money(c.riskIni):'<span style="color:var(--muted)">sem stop</span>')}</b></div>
   </div>
-  ${aberta?`<div class="card">${ladder(t,c)}<div class="meta"><div>Cotação<b>${c.price!=null?num(c.price):"—"}</b></div><div>Risco em jogo<b>${money(c.riskNow)}</b></div><div>Alvo<b>${num(t.plano.alvo)}</b></div></div>
+  ${aberta?`<div class="card">${ladder(t,c)}<div class="meta"><div>Cotação<b>${c.price!=null?num(c.price):"—"}</b></div><div>Risco em jogo<b>${c.riskNow==null?"sem stop":money(c.riskNow)}</b></div><div>Alvo<b>${c.alvo!=null?num(c.alvo):"sem alvo"}</b></div></div>
    ${t.plano.parcial?`<p class="hint">Parcial planejada: ${esc(t.plano.parcial)}</p>`:""}</div>
-   <div class="row2"><button class="btn gh" type="button" data-act="cotacao">Atualizar cotação</button><button class="btn gh" type="button" data-act="stop">Mover stop</button></div>
-   <div class="row2"><button class="btn gh" type="button" data-act="parcial">Parcial</button><button class="btn gh" type="button" data-act="nota">Nota</button></div>
+   <div class="row2"><button class="btn gh" type="button" data-act="cotacao">Atualizar cotação</button><button class="btn gh" type="button" data-act="parcial">Parcial</button></div>
+   <div class="row3"><button class="btn gh" type="button" data-act="stop">${c.stop!=null?"Mover stop":"Definir stop"}</button><button class="btn gh" type="button" data-act="alvo">${c.alvo!=null?"Mudar alvo":"Definir alvo"}</button><button class="btn gh" type="button" data-act="nota">Nota</button></div>
    <button class="btn" type="button" data-act="saida">Encerrar operação</button>`
   :`<div class="row2"><button class="btn gh" type="button" data-act="nota">Nota</button><button class="btn gh" type="button" data-act="reabrir">Reabrir</button></div>`}
   <div class="card"><div class="ch"><b>Diário da operação</b><span class="sub">${evs.length} registro(s)</span></div><div class="tl">${evs.map(e=>evRow(t,e,c)).join("")}</div>
@@ -365,7 +398,8 @@ function addEv(t,e){e.id=uid();e.ord=lastOrd(t);t.eventos.push(e);if(save()){clo
 function action(t,a){
   const c=calc(t);
   if(a==="cotacao")return sheetForm("Atualizar cotação",`<div class="row2">${fld("fP","Preço atual",c.price!=null?num(c.price):"")}${dateFld("fD")}</div>`,"Salvar cotação",()=>{const p=parseNum($("fP").value);if(!(p>0))return "Informe o preço.";addEv(t,{tipo:"cotacao",data:$("fD").value||todayISO(),preco:p});toast("Cotação atualizada")});
-  if(a==="stop")return sheetForm("Mover stop",`<div class="row2">${fld("fP","Novo stop",num(c.stop))}${dateFld("fD")}</div>${fld("fT","Motivo","",'maxlength="120" placeholder="Ex.: formou fundo válido" style="font-weight:600"')}`,"Salvar stop",()=>{const p=parseNum($("fP").value);if(!(p>0))return "Informe o novo stop.";if(p===c.stop)return "O novo stop é igual ao atual.";addEv(t,{tipo:"stop",data:$("fD").value||todayISO(),de:c.stop,para:p,texto:$("fT").value.trim()});toast("Stop atualizado")});
+  if(a==="stop")return sheetForm(c.stop!=null?"Mover stop":"Definir stop",`<div class="row2">${fld("fP",c.stop!=null?"Novo stop":"Stop",c.stop!=null?num(c.stop):"")}${dateFld("fD")}</div>${fld("fT","Motivo","",'maxlength="120" placeholder="Ex.: formou fundo válido" style="font-weight:600"')}`,"Salvar stop",()=>{const p=parseNum($("fP").value);if(!(p>0))return "Informe o stop.";if(p===c.stop)return "O novo stop é igual ao atual.";addEv(t,{tipo:"stop",data:$("fD").value||todayISO(),de:c.stop,para:p,texto:$("fT").value.trim()});toast(c.stop!=null?"Stop atualizado":"Stop definido")});
+  if(a==="alvo")return sheetForm(c.alvo!=null?"Mudar alvo":"Definir alvo",`<div class="row2">${fld("fP","Alvo",c.alvo!=null?num(c.alvo):"")}${dateFld("fD")}</div>${fld("fT","Motivo","",'maxlength="120" placeholder="Ex.: projeção de Fibonacci" style="font-weight:600"')}`,"Salvar alvo",()=>{const p=parseNum($("fP").value);if(!(p>0))return "Informe o alvo.";if(p===c.alvo)return "O alvo é igual ao atual.";addEv(t,{tipo:"alvo",data:$("fD").value||todayISO(),de:c.alvo,para:p,texto:$("fT").value.trim()});toast(c.alvo!=null?"Alvo atualizado":"Alvo definido")});
   if(a==="parcial"){const sug=Math.max(1,Math.round(c.open/3));
     return sheetForm("Registrar parcial",`<div class="row2">${fld("fQ","Quantidade vendida",sug,'inputmode="numeric"')}${fld("fP","Preço de venda",c.price!=null?num(c.price):"")}</div><div class="row2">${fld("fX","Taxas (R$)","")}${dateFld("fD")}</div>${fld("fT","Motivo","",'maxlength="120" placeholder="Ex.: chegou na resistência" style="font-weight:600"')}`,
     "Salvar parcial",()=>{const q=Math.floor(parseNum($("fQ").value)),p=parseNum($("fP").value);if(!(q>0))return "Informe a quantidade.";if(q>=c.open)return `Para vender tudo (${c.open}), use "Encerrar operação".`;if(!(p>0))return "Informe o preço de venda.";addEv(t,{tipo:"parcial",data:$("fD").value||todayISO(),qtd:q,preco:p,taxas:parseNum($("fX").value)||0,texto:$("fT").value.trim()});toast("Parcial registrada")},`<p class="hint">Posição atual: ${c.open}. Sugestão: 1/3 = ${sug}.</p>`)}
@@ -422,12 +456,12 @@ function renderDesempenho(){
   const mn=Math.min(0,...pts.map(p=>p.v)),mx=Math.max(0,...pts.map(p=>p.v)),sp=mx-mn||1;
   const X=i=>P+(W-2*P)*i/(pts.length-1||1),Y=v=>P+(H-2*P)*(1-(v-mn)/sp);
   const path=pts.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)} ${Y(p.v).toFixed(1)}`).join(" ");
-  const lastV=pts[pts.length-1].v,col=lastV>=0?"#FF8A1F":"#FF6B5B";
-  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de capital"><line x1="${P}" x2="${W-P}" y1="${Y(0)}" y2="${Y(0)}" stroke="#3A3A42" stroke-dasharray="4 4"/><path d="${path} L${X(pts.length-1)} ${Y(mn)} L${X(0)} ${Y(mn)}Z" fill="${col}" opacity=".12"/><path d="${path}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${X(pts.length-1)}" cy="${Y(lastV)}" r="4" fill="${col}"/></svg>`;
+  const lastV=pts[pts.length-1].v,col=lastV>=0?"#1C6CFF":"#FF6B5B";
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de capital"><line x1="${P}" x2="${W-P}" y1="${Y(0)}" y2="${Y(0)}" stroke="#1E3A66" stroke-dasharray="4 4"/><path d="${path} L${X(pts.length-1)} ${Y(mn)} L${X(0)} ${Y(mn)}Z" fill="${col}" opacity=".12"/><path d="${path}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${X(pts.length-1)}" cy="${Y(lastV)}" r="4" fill="${col}"/></svg>`;
   // por setup
   const g={};L.forEach(x=>{const k=x.t.setup||"Sem setup";(g[k]=g[k]||[]).push(x)});
-  const rows=Object.entries(g).map(([k,a])=>{const rs=a.map(x=>x.c.R).filter(r=>r!=null);return {k,n:a.length,r:rs.length?rs.reduce((s,r)=>s+r,0)/rs.length:0,w:a.filter(x=>x.c.total>0).length}}).sort((a,b)=>b.r-a.r);
-  const mr=Math.max(...rows.map(r=>Math.abs(r.r)),0.1);
+  const rows=Object.entries(g).map(([k,a])=>{const rs=a.map(x=>x.c.R).filter(r=>r!=null);return {k,n:a.length,r:rs.length?rs.reduce((s,r)=>s+r,0)/rs.length:null,w:a.filter(x=>x.c.total>0).length}}).sort((a,b)=>(b.r??-1e9)-(a.r??-1e9));
+  const mr=Math.max(...rows.map(r=>Math.abs(r.r||0)),0.1);
   $("v-desempenho").innerHTML=`
   <div class="top"><div><div class="h1">Desempenho</div><div class="sub">${L.length} operação(ões) encerrada(s)</div></div></div>
   ${chips}
@@ -437,9 +471,10 @@ function renderDesempenho(){
    <div class="k"><span>Resultado</span><b class="${cls(tot)}">${smoney(tot)}</b></div>
    <div class="k"><span>Ganho médio / perda média</span><b>${payoff==null?"—":num(payoff,1)}</b></div>
   </div>
+  ${Rs.length<L.length?`<p class="hint">A média em R considera só as operações com stop (${Rs.length} de ${L.length}).</p>`:""}
   <div class="card"><div class="ch"><b>Curva de capital</b><span class="sub">${smoney(lastV)}</span></div><div class="chart">${svg}</div></div>
   <div class="card"><div class="ch"><b>Por setup</b><span class="sub">média em R</span></div><div class="bars">
-   ${rows.map(r=>`<div class="l"><span>${esc(r.k)} <small style="color:var(--dim)">(${r.w}/${r.n})</small></span><div class="t"><i style="${r.r>=0?`left:0;width:${r.r/mr*100}%;background:var(--up)`:`left:0;width:${Math.abs(r.r)/mr*100}%;background:var(--dn)`}"></i></div><b class="${cls(r.r)}">${rfmt(r.r)}</b></div>`).join("")}
+   ${rows.map(r=>`<div class="l"><span>${esc(r.k)} <small style="color:var(--dim)">(${r.w}/${r.n})</small></span><div class="t"><i style="${(r.r||0)>=0?`left:0;width:${(r.r||0)/mr*100}%;background:var(--up)`:`left:0;width:${Math.abs(r.r)/mr*100}%;background:var(--dn)`}"></i></div><b class="${cls(r.r)}">${rfmt(r.r)}</b></div>`).join("")}
   </div></div>`;
   bindPerf();
 }
