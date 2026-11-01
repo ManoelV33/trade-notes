@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Trade Notes</title>
+<meta name="theme-color" content="#0A0A0B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Trade Notes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+@font-face{font-family:Manrope;font-weight:400;font-display:swap;src:url(fonts/manrope-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:Manrope;font-weight:600;font-display:swap;src:url(fonts/manrope-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:Manrope;font-weight:700;font-display:swap;src:url(fonts/manrope-latin-700-normal.woff2) format("woff2")}
+/* Layout: app de uma coluna — cabeçalho, conteúdo da aba, barra de abas fixa embaixo com + central */
+:root{
+  --bg:#0A0A0B;--surf:#151518;--surf2:#222227;--line:#26262C;
+  --ink:#EDEDF0;--muted:#8E8E98;--dim:#5E5E68;
+  --acc:#FF8A1F;--on:#111111;--accS:rgba(255,138,31,.14);
+  --up:#3DDC84;--upS:rgba(61,220,132,.14);--dn:#FF6B5B;--dnS:rgba(255,107,91,.15);
+  --f:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg);height:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.app{max-width:560px;margin:0 auto;padding-top:calc(env(safe-area-inset-top,0px) + 18px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 110px);padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.view{display:flex;flex-direction:column;gap:14px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:42px}
+.brand{font-size:21px;font-weight:700;letter-spacing:-.3px}.brand b{color:var(--acc)}
+.h1{font-size:21px;font-weight:700;letter-spacing:-.3px}
+.sub{font-size:12.5px;color:var(--muted);font-weight:600}
+.ib{width:42px;height:42px;border-radius:12px;border:0;background:var(--surf);display:flex;align-items:center;justify-content:center;flex:none;color:var(--ink);text-decoration:none;font-size:22px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.k{background:var(--surf);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.k span{font-size:12px;color:var(--muted);font-weight:600}.k b{font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pos{color:var(--up)}.neg{color:var(--dn)}
+.card{background:var(--surf);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+button.card{border:0;text-align:left;width:100%}
+button.card:active{background:#1B1B1F}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ch>b{font-size:14.5px}
+.tk{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:40px;height:40px;border-radius:10px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:var(--acc);flex:none}
+.tk b{font-size:16px}.tk small{display:block;font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.pill.g{background:var(--upS);color:var(--up)}.pill.r{background:var(--dnS);color:var(--dn)}.pill.o{background:var(--accS);color:var(--acc)}.pill.n{background:var(--surf2);color:var(--muted)}
+.ladder{position:relative;height:38px;margin:0 6px}
+.ladder .bar{position:absolute;left:0;right:0;top:11px;height:6px;border-radius:3px;display:flex;overflow:hidden}
+.ladder .bar i{display:block;height:100%}
+.ladder .tick{position:absolute;top:6px;width:2px;height:16px;background:var(--ink);transform:translateX(-1px)}
+.ladder .now{position:absolute;top:7px;width:14px;height:14px;border-radius:50%;background:var(--acc);border:3px solid var(--surf);transform:translateX(-7px)}
+.ladder .lb{position:absolute;top:24px;font-size:10.5px;color:var(--muted);white-space:nowrap;font-weight:600}
+.meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;font-size:12px;color:var(--muted)}
+.meta b{display:block;color:var(--ink);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{color:var(--muted);text-align:center;padding:36px 12px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.btn{border:0;border-radius:14px;height:52px;padding:0 18px;font-weight:700;font-size:16px;background:var(--acc);color:var(--on);width:100%;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.btn.gh{background:var(--surf2);color:var(--ink);font-size:14px;height:46px}
+.btn.dg{background:var(--dnS);color:var(--dn);font-size:14px;height:46px}
+.btn.sm{width:auto;height:44px;font-size:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f label,.f .lab{font-size:12px;color:var(--muted);font-weight:600}
+.f input,.f select,.f textarea{width:100%;min-width:0;background:var(--surf2);border:1.5px solid transparent;border-radius:10px;padding:11px 12px;font-weight:700;font-size:16px}
+.f textarea{font-weight:600;font-size:15px;resize:vertical;min-height:44px}
+.f input:focus,.f textarea:focus{border-color:var(--acc);outline:none}
+.f input.bad{border-color:var(--dn)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:0;font-size:13px;font-weight:700;padding:8px 12px;border-radius:999px;background:var(--surf2);color:var(--muted)}
+.chips button[aria-pressed="true"]{background:var(--acc);color:var(--on)}
+.calc{background:rgba(255,138,31,.09);border:1px solid rgba(255,138,31,.35);border-radius:14px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.calc div{display:flex;flex-direction:column;min-width:0}.calc span{font-size:11.5px;color:var(--muted);font-weight:600}.calc b{font-size:17px;white-space:nowrap}
+.err{margin:0;color:var(--dn);font-size:13px;font-weight:600}
+.hint{margin:0;color:var(--muted);font-size:12.5px}
+.tl{display:flex;flex-direction:column}
+.ev{display:grid;grid-template-columns:18px 1fr auto;gap:10px;padding:9px 0;border:0;background:none;text-align:left;width:100%;border-radius:10px}
+.ev .d{width:10px;height:10px;border-radius:50%;margin:5px 4px 0}
+.ev b{font-size:13.5px}.ev small{display:block;font-size:12px;color:var(--muted)}
+.ev .x{font-size:12.5px;font-weight:700;text-align:right;white-space:nowrap}
+.bars{display:flex;flex-direction:column;gap:10px;font-size:12.5px}
+.bars .l{display:grid;grid-template-columns:minmax(80px,110px) 1fr 64px;gap:8px;align-items:center}
+.bars .l span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bars .t{height:10px;border-radius:5px;background:var(--surf2);overflow:hidden;position:relative}
+.bars .t i{position:absolute;top:0;bottom:0;border-radius:5px}
+.bars b{text-align:right}
+.chart svg{display:block;width:100%;height:auto}
+.chart text{fill:var(--muted);font-family:var(--f);font-size:11px}
+.list .item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.list .item:last-child{border-bottom:0}
+.list .item .t{flex:1;min-width:0}.list .item .t b{display:block}.list .item .t small{color:var(--muted);font-size:12px}
+.list .item .v{text-align:right;font-weight:700;white-space:nowrap}.list .item .v small{display:block;font-size:12px;font-weight:600}
+.setrow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.setrow:last-child{border-bottom:0}
+.x{border:0;background:none;color:var(--muted);font-size:18px;width:36px;height:36px;border-radius:8px}
+.note{font-size:11px;color:var(--dim);text-align:center}
+/* barra de abas */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surf);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.nav .in{max-width:560px;margin:0 auto;height:66px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:var(--muted);font-size:11px;font-weight:600}
+.nav a[aria-current="page"]{color:var(--acc)}
+.fab{justify-self:center;width:62px;height:62px;margin-top:-34px;border-radius:50%;background:var(--acc);color:var(--on);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px var(--bg)}
+.fab svg{width:30px;height:30px;stroke-width:2.4}
+/* folha de ação */
+.sheetwrap{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.sheet{position:relative;width:100%;max-width:560px;max-height:calc(100% - env(safe-area-inset-top,0px) - 12px);overflow-y:auto;background:var(--surf);border-radius:24px 24px 0 0;padding:10px max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 18px) max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(40px);opacity:.4}}}
+.handle{align-self:center;width:40px;height:5px;border-radius:3px;background:var(--surf2)}
+.sheet h2{margin:0;font-size:17px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);font-weight:700;font-size:14px;padding:10px 16px;border-radius:999px;white-space:nowrap}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="view" id="v-abertas"></section>
+  <section class="view" id="v-nova" hidden></section>
+  <section class="view" id="v-op" hidden></section>
+  <section class="view" id="v-historico" hidden></section>
+  <section class="view" id="v-desempenho" hidden></section>
+  <section class="view" id="v-ajustes" hidden></section>
+</main>
+
+<nav class="nav" aria-label="Seções"><div class="in">
+  <a href="#abertas" data-tab="abertas"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Abertas</a>
+  <a href="#historico" data-tab="historico"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Histórico</a>
+  <a class="fab" href="#nova" aria-label="Nova operação"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
+  <a href="#desempenho" data-tab="desempenho"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Desempenho</a>
+  <a href="#ajustes" data-tab="ajustes"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Ajustes</a>
+</div></nav>
+
+<div class="sheetwrap" id="sheet" hidden>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle" id="sheetBody"></div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ---------- utilidades ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const now=new Date();
+const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const BRL=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+const money=v=>BRL.format(v||0);
+const smoney=v=>(v>0?"+":v<0?"−":"")+BRL.format(Math.abs(v||0));
+const num=(v,d=2)=>Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const rfmt=r=>r==null||!isFinite(r)?"—":(r>0?"+":r<0?"−":"")+Math.abs(r).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:2})+" R";
+const pct=v=>(v>0?"+":v<0?"−":"")+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+"%";
+function parseNum(s){if(s==null)return NaN;s=String(s).trim().replace(/R\$\s?/,"").replace(/\s/g,"");if(!s)return NaN;if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,"");const v=Number(s);return isFinite(v)?v:NaN}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const dateBR=iso=>{if(!iso)return"";const [y,m,d]=iso.slice(0,10).split("-");return `${d}/${m}/${y.slice(2)}`};
+const cls=v=>v>0?"pos":v<0?"neg":"";
+let tt;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200)}
+
+/* ---------- dados ---------- */
+const KEY="tn_data_v1";
+const DEFAULT_SETUPS=["Rompimento","Pullback","Fundo duplo"];
+function loadData(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(d&&Array.isArray(d.trades))return {settings:{carteira:0,riscoPct:1,setups:DEFAULT_SETUPS.slice(),...d.settings},trades:d.trades}}catch(e){}return {settings:{carteira:0,riscoPct:1,setups:DEFAULT_SETUPS.slice()},trades:[]}}
+let DB=loadData();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));return true}catch(e){toast("Não foi possível salvar neste aparelho");return false}}
+const byId=id=>DB.trades.find(t=>t.id===id);
+
+/* ---------- cálculos de uma operação ---------- */
+function calc(t){
+  const ev=[...t.eventos].sort((a,b)=>(a.data+a.ord).localeCompare(b.data+b.ord));
+  let qIn=0,cost=0,fees=0,qOut=0,realized=0,stop=t.plano.stop,firstStop=t.plano.stop,parciais=0,price=null,cotData=null;
+  for(const e of ev){
+    fees+=e.taxas||0;
+    if(e.tipo==="entrada"){qIn+=e.qtd;cost+=e.qtd*e.preco;price=e.preco;cotData=null}
+    else if(e.tipo==="parcial"||e.tipo==="saida"){const avg=qIn?cost/qIn:0;realized+=(e.preco-avg)*e.qtd;qOut+=e.qtd;price=e.preco;cotData=null;if(e.tipo==="parcial")parciais++}
+    else if(e.tipo==="stop"){stop=e.para}
+    else if(e.tipo==="cotacao"){price=e.preco;cotData=e.data}
+  }
+  const avg=qIn?cost/qIn:0,open=Math.max(0,qIn-qOut);
+  const unreal=t.status==="aberta"&&price!=null?(price-avg)*open:0;
+  const total=realized+unreal-fees;
+  const riskIni=Math.max(0,(avg-firstStop)*qIn);
+  const R=riskIni>0?total/riskIni:null;
+  const riskNow=t.status==="aberta"?Math.max(0,(avg-stop)*open):0;
+  const entradaData=ev.find(e=>e.tipo==="entrada")?.data||t.criado;
+  const saida=ev.filter(e=>e.tipo==="saida").pop();
+  const pctRes=cost>0?total/cost*100:0;
+  return {avg,qIn,open,stop,price,cotData,realized,unreal,fees,total,R,riskIni,riskNow,parciais,entradaData,saidaData:saida?.data||null,pctRes,ev};
+}
+
+/* ---------- navegação ---------- */
+let current="abertas",backTo="abertas";
+function route(){
+  const h=location.hash.slice(1)||"abertas";
+  let v=h.startsWith("op-")?"op":h;
+  if(!["abertas","nova","op","historico","desempenho","ajustes"].includes(v))v="abertas";
+  if(v!=="op"&&v!=="nova")backTo=v;
+  current=v;
+  document.querySelectorAll(".view").forEach(s=>s.hidden=s.id!=="v-"+v);
+  document.querySelectorAll(".nav a[data-tab]").forEach(a=>{if(a.dataset.tab===v||(v==="op"&&a.dataset.tab===backTo))a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  closeSheet();
+  if(v==="abertas")renderAbertas();
+  else if(v==="nova")renderNova();
+  else if(v==="op")renderOp(h.slice(3));
+  else if(v==="historico")renderHistorico();
+  else if(v==="desempenho")renderDesempenho();
+  else if(v==="ajustes")renderAjustes();
+  window.scrollTo(0,0);
+}
+addEventListener("hashchange",route);
+
+/* ---------- régua de preço ---------- */
+function ladder(t,c){
+  const lo=Math.min(c.stop,c.avg,c.price??c.avg),hi=Math.max(t.plano.alvo,c.price??0,c.avg);
+  const span=hi-lo||1,p=v=>Math.min(100,Math.max(0,(v-lo)/span*100));
+  const ps=p(c.stop),pe=p(c.avg),pa=p(t.plano.alvo),pn=c.price!=null?p(c.price):null;
+  const redW=Math.max(0,pe-ps);
+  let lbl=`<span class="lb" style="left:0">stop ${num(c.stop)}</span><span class="lb" style="right:0">alvo ${num(t.plano.alvo)}</span>`;
+  if(pn!=null&&pn>14&&pn<86)lbl+=`<span class="lb" style="left:${pn}%;transform:translateX(-50%);color:var(--acc)">${num(c.price)}</span>`;
+  return `<div class="ladder"><div class="bar"><i style="width:${ps}%;background:transparent"></i><i style="width:${redW}%;background:var(--dn)"></i><i style="flex:1;background:var(--up);max-width:${Math.max(0,pa-Math.max(ps,pe))}%"></i></div>
+   <span class="tick" style="left:${ps}%"></span>${redW>0.5?`<span class="tick" style="left:${pe}%;opacity:.6"></span>`:""}<span class="tick" style="left:${pa}%"></span>${pn!=null?`<span class="now" style="left:${pn}%"></span>`:""}${lbl}</div>`;
+}
+const logo=a=>`<div class="logo">${esc(a.replace(/\d+$/,"").slice(0,4))}</div>`;
+function rPill(R){if(R==null)return `<span class="pill n">— R</span>`;return `<span class="pill ${R>0.005?"g":R<-0.005?"r":"n"}">${rfmt(R)}</span>`}
+
+/* ---------- ABERTAS ---------- */
+function renderAbertas(){
+  const open=DB.trades.filter(t=>t.status==="aberta").map(t=>({t,c:calc(t)})).sort((a,b)=>b.c.entradaData.localeCompare(a.c.entradaData));
+  const tot=open.reduce((s,x)=>s+x.c.total,0),risk=open.reduce((s,x)=>s+x.c.riskNow,0);
+  $("v-abertas").innerHTML=`
+  <div class="top"><div><div class="brand">Trade<b>Notes</b></div><div class="sub">${open.length?`${open.length} posição(ões) aberta(s)`:"Nenhuma posição aberta"}</div></div></div>
+  ${open.length?`<div class="kpis"><div class="k"><span>Resultado das abertas</span><b class="${cls(tot)}">${smoney(tot)}</b></div><div class="k"><span>Risco em jogo</span><b>${money(risk)}</b></div></div>`:""}
+  ${open.map(({t,c})=>{
+    const ate=c.price?(t.plano.alvo-c.price)/c.price*100:null;
+    return `<button class="card" type="button" data-go="op-${t.id}">
+     <div class="ch"><div class="tk">${logo(t.ativo)}<div><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${c.open} de ${c.qIn} ${t.tipo==="FII"?"cotas":"ações"}</small></div></div>${rPill(c.R)}</div>
+     ${ladder(t,c)}
+     <div class="meta"><div>Resultado<b class="${cls(c.total)}">${smoney(c.total)}</b></div><div>Até o alvo<b>${ate==null?"—":pct(ate)}</b></div><div>${c.parciais?"Parciais":"Cotação"}<b>${c.parciais?`${c.parciais} feita(s)`:(c.cotData?dateBR(c.cotData):"da entrada")}</b></div></div>
+    </button>`}).join("")}
+  ${open.length?"":`<div class="empty"><span>Registre sua primeira operação: o app calcula o risco, a quantidade e a relação risco/retorno.</span><a class="btn sm" href="#nova">Nova operação</a></div>`}`;
+}
+
+/* ---------- NOVA OPERAÇÃO ---------- */
+const NF={tipo:"Ação",setup:""};
+function renderNova(){
+  const s=DB.settings;NF.tipo="Ação";NF.setup=s.setups[0]||"";
+  $("v-nova").innerHTML=`
+  <div class="top"><a class="ib" href="#${backTo}" aria-label="Fechar">×</a><div class="h1">Nova operação</div><span style="width:42px"></span></div>
+  <div class="row2"><div class="f"><label for="nAtivo">Ativo</label><input id="nAtivo" placeholder="ITUB4" autocapitalize="characters" autocomplete="off" maxlength="12"></div>
+   <div class="f"><label for="nData">Data da entrada</label><input id="nData" type="date" value="${todayISO()}"></div></div>
+  <div class="f"><span class="lab">Tipo</span><div class="chips" id="nTipo">${["Ação","ETF","BDR","FII"].map(x=>`<button type="button" data-v="${x}" aria-pressed="${x==="Ação"}">${x}</button>`).join("")}</div></div>
+  <div class="f"><span class="lab">Setup</span><div class="chips" id="nSetup">${s.setups.map((x,i)=>`<button type="button" data-v="${esc(x)}" aria-pressed="${i===0}">${esc(x)}</button>`).join("")}<button type="button" data-new="1">+ novo</button></div></div>
+  <div class="row3"><div class="f"><label for="nEnt">Entrada</label><input id="nEnt" inputmode="decimal" placeholder="0,00"></div>
+   <div class="f"><label for="nStop" style="color:var(--dn)">Stop</label><input id="nStop" inputmode="decimal" placeholder="0,00"></div>
+   <div class="f"><label for="nAlvo" style="color:var(--up)">Alvo</label><input id="nAlvo" inputmode="decimal" placeholder="0,00"></div></div>
+  <div class="row2"><div class="f"><label for="nCart">Carteira (R$)</label><input id="nCart" inputmode="decimal" placeholder="opcional" value="${s.carteira?num(s.carteira):""}"></div>
+   <div class="f"><label for="nRisco">Risco por operação (%)</label><input id="nRisco" inputmode="decimal" value="${num(s.riscoPct,s.riscoPct%1?1:0)}"></div></div>
+  <div class="calc" id="nCalc"></div>
+  <div class="row2"><div class="f"><label for="nQtd">Quantidade</label><input id="nQtd" inputmode="numeric" placeholder="0"></div>
+   <div class="f"><label for="nTax">Taxas da compra (R$)</label><input id="nTax" inputmode="decimal" placeholder="0,00"></div></div>
+  <div class="f"><label for="nParc">Parcial planejada (opcional)</label><input id="nParc" placeholder="Ex.: vender 1/3 em 40,00" maxlength="80" style="font-weight:600"></div>
+  <div class="f"><label for="nMot">Motivo da entrada (opcional)</label><textarea id="nMot" rows="2" maxlength="300" placeholder="Ex.: rompeu a máxima de 13/10 com volume"></textarea></div>
+  <p class="err" id="nErr" hidden></p>
+  <button class="btn" type="button" id="nSave">Registrar entrada</button>`;
+  let qtdTouched=false;
+  const upd=()=>{
+    const e=parseNum($("nEnt").value),st=parseNum($("nStop").value),a=parseNum($("nAlvo").value),cart=parseNum($("nCart").value),rp=parseNum($("nRisco").value);
+    const rps=Math.round((e-st)*1e6)/1e6,rr=(a-e)/rps;
+    let sug=null;if(cart>0&&rp>0&&rps>0){sug=Math.floor(cart*rp/100/rps+1e-9);if(NF.tipo!=="FII"&&false)sug=Math.floor(sug/100)*100}
+    if(!qtdTouched&&sug!=null)$("nQtd").value=sug;
+    const q=parseNum($("nQtd").value)||0;
+    const ok=e>0&&st>0&&a>0&&st<e&&a>e;
+    $("nCalc").innerHTML=`
+     <div><span>Risco por ação</span><b>${ok?money(rps):"—"}</b></div>
+     <div><span>Risco/retorno</span><b style="color:var(--acc)">${ok?"1 : "+num(rr,rr<10?1:0):"—"}</b></div>
+     <div><span>Quantidade sugerida</span><b>${sug!=null&&ok?sug.toLocaleString("pt-BR"):"—"}</b></div>
+     <div><span>Valor da posição</span><b>${ok&&q?money(q*e):"—"}</b></div>
+     <div><span>Perda se der stop</span><b class="neg">${ok&&q?"−"+money(q*rps):"—"}</b></div>
+     <div><span>Ganho no alvo</span><b class="pos">${ok&&q?"+"+money(q*(a-e)):"—"}</b></div>
+     ${cart>0&&ok&&q?`<div style="grid-column:1/-1"><span>Risco real da quantidade</span><b>${num(q*rps/cart*100,2)}% da carteira</b></div>`:""}`;
+  };
+  ["nEnt","nStop","nAlvo","nCart","nRisco"].forEach(id=>$(id).addEventListener("input",upd));
+  $("nQtd").addEventListener("input",()=>{qtdTouched=$("nQtd").value!=="";upd()});
+  $("nAtivo").addEventListener("input",e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p)});
+  $("nTipo").onclick=e=>{const b=e.target.closest("button");if(!b)return;NF.tipo=b.dataset.v;[...$("nTipo").children].forEach(x=>x.setAttribute("aria-pressed",x===b));upd()};
+  $("nSetup").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+    if(b.dataset.new){openSheet(`<div class="handle"></div><h2 id="shTitle">Novo setup</h2><div class="f"><label for="sNome">Nome do setup</label><input id="sNome" maxlength="30" placeholder="Ex.: Pivô de alta" style="font-weight:600"></div><button class="btn" type="button" id="sOk">Adicionar</button>`);
+      $("sNome").focus();$("sOk").onclick=()=>{const v=$("sNome").value.trim();if(!v)return;if(!DB.settings.setups.includes(v)){DB.settings.setups.push(v);save()}closeSheet();const keep=readNova();renderNova();writeNova(keep);NF.setup=v;[...$("nSetup").children].forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===v))};return}
+    NF.setup=b.dataset.v;[...$("nSetup").children].forEach(x=>x.setAttribute("aria-pressed",x===b))};
+  $("nSave").onclick=()=>saveNova();
+  upd();
+}
+function readNova(){const o={};["nAtivo","nData","nEnt","nStop","nAlvo","nCart","nRisco","nQtd","nTax","nParc","nMot"].forEach(id=>o[id]=$(id).value);o.tipo=NF.tipo;return o}
+function writeNova(o){Object.entries(o).forEach(([k,v])=>{if($(k))$(k).value=v});NF.tipo=o.tipo;[...$("nTipo").children].forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===o.tipo));$("nEnt").dispatchEvent(new Event("input"))}
+function saveNova(){
+  const ativo=$("nAtivo").value.trim().toUpperCase(),data=$("nData").value||todayISO();
+  const e=parseNum($("nEnt").value),st=parseNum($("nStop").value),a=parseNum($("nAlvo").value),q=Math.floor(parseNum($("nQtd").value)),tax=parseNum($("nTax").value)||0;
+  const err=m=>{$("nErr").textContent=m;$("nErr").hidden=false;return false};
+  if(!ativo)return err("Informe o código do ativo, por exemplo ITUB4.");
+  if(!(e>0)||!(st>0)||!(a>0))return err("Preencha entrada, stop e alvo.");
+  if(!(st<e))return err("O stop precisa ficar abaixo da entrada (operação de compra).");
+  if(!(a>e))return err("O alvo precisa ficar acima da entrada.");
+  if(!(q>0))return err("Informe a quantidade comprada.");
+  const cart=parseNum($("nCart").value),rp=parseNum($("nRisco").value);
+  if(cart>0)DB.settings.carteira=cart;if(rp>0)DB.settings.riscoPct=rp;
+  const t={id:uid(),ativo,tipo:NF.tipo,moeda:"BRL",setup:NF.setup,status:"aberta",criado:new Date().toISOString(),
+    plano:{entrada:e,stop:st,alvo:a,parcial:$("nParc").value.trim()},
+    eventos:[{id:uid(),ord:"0",tipo:"entrada",data,preco:e,qtd:q,taxas:tax,texto:$("nMot").value.trim()}]};
+  DB.trades.push(t);
+  if(save()){toast("Operação registrada");location.hash="op-"+t.id}
+}
+
+/* ---------- DETALHE / GESTÃO ---------- */
+const EVINFO={entrada:["var(--ink)","Entrada"],parcial:["var(--up)","Parcial"],saida:["var(--acc)","Encerramento"],stop:["var(--acc)","Stop movido"],nota:["var(--muted)","Nota"],cotacao:["#5B95FF","Cotação atualizada"]};
+function evRow(t,e,c){
+  const [col,title]=EVINFO[e.tipo];let main=title,right="";
+  if(e.tipo==="entrada"){main=`Entrada: ${e.qtd} ${t.tipo==="FII"?"cotas":"ações"}`;right=num(e.preco)}
+  if(e.tipo==="parcial"||e.tipo==="saida"){main=`${e.tipo==="parcial"?"Parcial":"Encerrou"}: vendeu ${e.qtd}`;right=num(e.preco)}
+  if(e.tipo==="stop"){main=`Stop movido para ${num(e.para)}`;right=`${num(e.de)} → ${num(e.para)}`}
+  if(e.tipo==="cotacao"){right=num(e.preco)}
+  const sub=[dateBR(e.data),e.texto,e.taxas?`taxas ${money(e.taxas)}`:""].filter(Boolean).join(" · ");
+  return `<button class="ev" type="button" data-ev="${e.id}"><i class="d" style="background:${col}"></i><div><b>${esc(main)}</b><small>${esc(sub)}</small></div><div class="x">${esc(right)}</div></button>`;
+}
+function renderOp(id){
+  const t=byId(id);if(!t){location.hash="abertas";return}
+  const c=calc(t),aberta=t.status==="aberta";
+  const evs=[...c.ev].reverse();
+  $("v-op").innerHTML=`
+  <div class="top"><a class="ib" href="#${backTo}" aria-label="Voltar">‹</a><div style="text-align:center;min-width:0"><div class="h1" style="font-size:18px">${esc(t.ativo)}</div><div class="sub">${esc([t.tipo,t.setup].filter(Boolean).join(" · "))}${aberta?"":" · encerrada"}</div></div>${rPill(c.R)}</div>
+  <div class="kpis">
+   <div class="k"><span>Resultado${aberta?" (com abertas)":""}</span><b class="${cls(c.total)}">${smoney(c.total)}</b></div>
+   <div class="k"><span>${aberta?"Posição atual":"Retorno"}</span><b>${aberta?`${c.open} ${t.tipo==="FII"?"cotas":"ações"}`:pct(c.pctRes)}</b></div>
+   <div class="k"><span>Preço médio</span><b>${num(c.avg)}</b></div>
+   <div class="k"><span>${aberta?"Stop atual":"Risco inicial"}</span><b>${aberta?num(c.stop):money(c.riskIni)}</b></div>
+  </div>
+  ${aberta?`<div class="card">${ladder(t,c)}<div class="meta"><div>Cotação<b>${c.price!=null?num(c.price):"—"}</b></div><div>Risco em jogo<b>${money(c.riskNow)}</b></div><div>Alvo<b>${num(t.plano.alvo)}</b></div></div>
+   ${t.plano.parcial?`<p class="hint">Parcial planejada: ${esc(t.plano.parcial)}</p>`:""}</div>
+   <div class="row2"><button class="btn gh" type="button" data-act="cotacao">Atualizar cotação</button><button class="btn gh" type="button" data-act="stop">Mover stop</button></div>
+   <div class="row2"><button class="btn gh" type="button" data-act="parcial">Parcial</button><button class="btn gh" type="button" data-act="nota">Nota</button></div>
+   <button class="btn" type="button" data-act="saida">Encerrar operação</button>`
+  :`<div class="row2"><button class="btn gh" type="button" data-act="nota">Nota</button><button class="btn gh" type="button" data-act="reabrir">Reabrir</button></div>`}
+  <div class="card"><div class="ch"><b>Diário da operação</b><span class="sub">${evs.length} registro(s)</span></div><div class="tl">${evs.map(e=>evRow(t,e,c)).join("")}</div>
+   <p class="hint">Toque num registro para excluí-lo, se lançou algo errado.</p></div>
+  <button class="btn dg" type="button" data-act="excluirop">Excluir operação</button>`;
+  $("v-op").onclick=e=>{
+    const b=e.target.closest("[data-act]");if(b)return action(t,b.dataset.act);
+    const r=e.target.closest("[data-ev]");if(r)return evAction(t,r.dataset.ev);
+  };
+}
+function sheetForm(title,fields,okText,onOk,extra=""){
+  openSheet(`<div class="handle"></div><h2 id="shTitle">${title}</h2>${fields}${extra}<p class="err" id="shErr" hidden></p><button class="btn" type="button" id="shOk">${okText}</button>`);
+  const first=$("sheetBody").querySelector("input,textarea");if(first)setTimeout(()=>first.focus(),50);
+  $("shOk").onclick=()=>{const m=onOk();if(typeof m==="string"){$("shErr").textContent=m;$("shErr").hidden=false}};
+}
+const fld=(id,label,val="",attrs='inputmode="decimal"')=>`<div class="f"><label for="${id}">${label}</label><input id="${id}" value="${esc(val)}" ${attrs}></div>`;
+const dateFld=id=>`<div class="f"><label for="${id}">Data</label><input id="${id}" type="date" value="${todayISO()}"></div>`;
+function lastOrd(t){return String(t.eventos.length).padStart(4,"0")}
+function addEv(t,e){e.id=uid();e.ord=lastOrd(t);t.eventos.push(e);if(save()){closeSheet();renderOp(t.id)}}
+function action(t,a){
+  const c=calc(t);
+  if(a==="cotacao")return sheetForm("Atualizar cotação",`<div class="row2">${fld("fP","Preço atual",c.price!=null?num(c.price):"")}${dateFld("fD")}</div>`,"Salvar cotação",()=>{const p=parseNum($("fP").value);if(!(p>0))return "Informe o preço.";addEv(t,{tipo:"cotacao",data:$("fD").value||todayISO(),preco:p});toast("Cotação atualizada")});
+  if(a==="stop")return sheetForm("Mover stop",`<div class="row2">${fld("fP","Novo stop",num(c.stop))}${dateFld("fD")}</div>${fld("fT","Motivo","",'maxlength="120" placeholder="Ex.: formou fundo válido" style="font-weight:600"')}`,"Salvar stop",()=>{const p=parseNum($("fP").value);if(!(p>0))return "Informe o novo stop.";if(p===c.stop)return "O novo stop é igual ao atual.";addEv(t,{tipo:"stop",data:$("fD").value||todayISO(),de:c.stop,para:p,texto:$("fT").value.trim()});toast("Stop atualizado")});
+  if(a==="parcial"){const sug=Math.max(1,Math.round(c.open/3));
+    return sheetForm("Registrar parcial",`<div class="row2">${fld("fQ","Quantidade vendida",sug,'inputmode="numeric"')}${fld("fP","Preço de venda",c.price!=null?num(c.price):"")}</div><div class="row2">${fld("fX","Taxas (R$)","")}${dateFld("fD")}</div>${fld("fT","Motivo","",'maxlength="120" placeholder="Ex.: chegou na resistência" style="font-weight:600"')}`,
+    "Salvar parcial",()=>{const q=Math.floor(parseNum($("fQ").value)),p=parseNum($("fP").value);if(!(q>0))return "Informe a quantidade.";if(q>=c.open)return `Para vender tudo (${c.open}), use "Encerrar operação".`;if(!(p>0))return "Informe o preço de venda.";addEv(t,{tipo:"parcial",data:$("fD").value||todayISO(),qtd:q,preco:p,taxas:parseNum($("fX").value)||0,texto:$("fT").value.trim()});toast("Parcial registrada")},`<p class="hint">Posição atual: ${c.open}. Sugestão: 1/3 = ${sug}.</p>`)}
+  if(a==="saida")return sheetForm("Encerrar operação",`<div class="row2">${fld("fP","Preço de venda",c.price!=null?num(c.price):"")}${fld("fX","Taxas (R$)","")}</div>${dateFld("fD")}${fld("fT","Motivo / aprendizado","",'maxlength="200" placeholder="Ex.: atingiu o alvo" style="font-weight:600"')}`,
+    "Encerrar e vender "+c.open,()=>{const p=parseNum($("fP").value);if(!(p>0))return "Informe o preço de venda.";t.status="encerrada";addEv(t,{tipo:"saida",data:$("fD").value||todayISO(),qtd:c.open,preco:p,taxas:parseNum($("fX").value)||0,texto:$("fT").value.trim()});toast("Operação encerrada")},`<p class="hint">Vende as ${c.open} restantes e move a operação para o Histórico.</p>`);
+  if(a==="nota")return sheetForm("Nova nota",`<div class="f"><label for="fT">Anotação</label><textarea id="fT" rows="3" maxlength="400" placeholder="O que você observou?"></textarea></div>${dateFld("fD")}`,"Salvar nota",()=>{const v=$("fT").value.trim();if(!v)return "Escreva a nota.";addEv(t,{tipo:"nota",data:$("fD").value||todayISO(),texto:v});toast("Nota salva")});
+  if(a==="reabrir")return confirmSheet("Reabrir operação?","O registro de encerramento será removido e a posição volta para Abertas.","Reabrir",()=>{const i=t.eventos.map(e=>e.tipo).lastIndexOf("saida");if(i>-1)t.eventos.splice(i,1);t.status="aberta";if(save()){closeSheet();renderOp(t.id);toast("Operação reaberta")}});
+  if(a==="excluirop")return confirmSheet("Excluir operação?",`${t.ativo} e todo o seu diário serão apagados. Não dá para desfazer.`,"Excluir",()=>{DB.trades=DB.trades.filter(x=>x.id!==t.id);if(save()){closeSheet();toast("Operação excluída");location.hash=backTo}},true);
+}
+function evAction(t,eid){
+  const e=t.eventos.find(x=>x.id===eid);if(!e)return;
+  if(e.tipo==="entrada"&&t.eventos.filter(x=>x.tipo==="entrada").length===1)return toast("A entrada só sai excluindo a operação inteira");
+  confirmSheet("Excluir este registro?",`${EVINFO[e.tipo][1]} de ${dateBR(e.data)}.`,"Excluir registro",()=>{t.eventos=t.eventos.filter(x=>x.id!==eid);if(e.tipo==="saida")t.status="aberta";if(save()){closeSheet();renderOp(t.id);toast("Registro excluído")}},true);
+}
+function confirmSheet(title,text,ok,fn,danger){
+  openSheet(`<div class="handle"></div><h2 id="shTitle">${esc(title)}</h2><p class="hint" style="font-size:14px">${esc(text)}</p><div class="row2"><button class="btn gh" type="button" id="cNo">Cancelar</button><button class="btn ${danger?"dg":""}" type="button" id="cYes" style="${danger?"":"height:46px;font-size:14px"}">${esc(ok)}</button></div>`);
+  $("cNo").onclick=closeSheet;$("cYes").onclick=fn;
+}
+
+/* ---------- HISTÓRICO ---------- */
+let histSetup="Todos";
+function renderHistorico(){
+  const closed=DB.trades.filter(t=>t.status==="encerrada").map(t=>({t,c:calc(t)})).sort((a,b)=>(b.c.saidaData||"").localeCompare(a.c.saidaData||""));
+  const setups=["Todos",...new Set(closed.map(x=>x.t.setup).filter(Boolean))];
+  if(!setups.includes(histSetup))histSetup="Todos";
+  const list=closed.filter(x=>histSetup==="Todos"||x.t.setup===histSetup);
+  const tot=list.reduce((s,x)=>s+x.c.total,0);
+  $("v-historico").innerHTML=`
+  <div class="top"><div><div class="h1">Histórico</div><div class="sub">${list.length} operação(ões) encerrada(s)</div></div></div>
+  ${closed.length?`<div class="chips" id="hFil">${setups.map(s=>`<button type="button" data-v="${esc(s)}" aria-pressed="${s===histSetup}">${esc(s)}</button>`).join("")}</div>
+  <div class="kpis"><div class="k"><span>Resultado</span><b class="${cls(tot)}">${smoney(tot)}</b></div><div class="k"><span>Acertos</span><b>${list.filter(x=>x.c.total>0).length} de ${list.length}</b></div></div>
+  <div class="card list">${list.map(({t,c})=>`<button class="item" type="button" data-go="op-${t.id}" style="background:none;border:0;border-bottom:1px solid var(--line);width:100%;text-align:left">${logo(t.ativo)}<div class="t"><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${dateBR(c.entradaData)} → ${dateBR(c.saidaData)}</small></div><div class="v ${cls(c.total)}">${smoney(c.total)}<small>${rfmt(c.R)} · ${pct(c.pctRes)}</small></div></button>`).join("")}</div>`
+  :`<div class="empty"><span>As operações encerradas aparecem aqui, com o resultado em R$, em % e em R.</span></div>`}`;
+  const f=$("hFil");if(f)f.onclick=e=>{const b=e.target.closest("button");if(b){histSetup=b.dataset.v;renderHistorico()}};
+}
+
+/* ---------- DESEMPENHO ---------- */
+let perf="90";
+function renderDesempenho(){
+  const all=DB.trades.filter(t=>t.status==="encerrada").map(t=>({t,c:calc(t)})).filter(x=>x.c.saidaData);
+  const lim=perf==="tudo"?null:new Date(Date.now()-Number(perf)*864e5).toISOString().slice(0,10);
+  const L=all.filter(x=>!lim||x.c.saidaData>=lim).sort((a,b)=>a.c.saidaData.localeCompare(b.c.saidaData));
+  const wins=L.filter(x=>x.c.total>0),loss=L.filter(x=>x.c.total<0);
+  const tot=L.reduce((s,x)=>s+x.c.total,0);
+  const Rs=L.map(x=>x.c.R).filter(r=>r!=null);
+  const avgR=Rs.length?Rs.reduce((s,r)=>s+r,0)/Rs.length:null;
+  const aw=wins.length?wins.reduce((s,x)=>s+x.c.total,0)/wins.length:0,al=loss.length?Math.abs(loss.reduce((s,x)=>s+x.c.total,0)/loss.length):0;
+  const payoff=al>0?aw/al:null;
+  const chips=`<div class="chips" id="pFil">${[["30","30 dias"],["90","90 dias"],["365","12 meses"],["tudo","Tudo"]].map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${v===perf}">${l}</button>`).join("")}</div>`;
+  if(!L.length){$("v-desempenho").innerHTML=`<div class="top"><div><div class="h1">Desempenho</div><div class="sub">Sem operações encerradas no período</div></div></div>${chips}<div class="empty"><span>Encerre operações para ver taxa de acerto, resultado em R, curva de capital e o desempenho de cada setup.</span></div>`;bindPerf();return}
+  // curva
+  let acc=0;const pts=[{v:0}].concat(L.map(x=>({v:acc+=x.c.total})));
+  const W=Math.max(300,(document.querySelector(".app").clientWidth||400)-64),H=150,P=8;
+  const mn=Math.min(0,...pts.map(p=>p.v)),mx=Math.max(0,...pts.map(p=>p.v)),sp=mx-mn||1;
+  const X=i=>P+(W-2*P)*i/(pts.length-1||1),Y=v=>P+(H-2*P)*(1-(v-mn)/sp);
+  const path=pts.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)} ${Y(p.v).toFixed(1)}`).join(" ");
+  const lastV=pts[pts.length-1].v,col=lastV>=0?"#FF8A1F":"#FF6B5B";
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de capital"><line x1="${P}" x2="${W-P}" y1="${Y(0)}" y2="${Y(0)}" stroke="#3A3A42" stroke-dasharray="4 4"/><path d="${path} L${X(pts.length-1)} ${Y(mn)} L${X(0)} ${Y(mn)}Z" fill="${col}" opacity=".12"/><path d="${path}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${X(pts.length-1)}" cy="${Y(lastV)}" r="4" fill="${col}"/></svg>`;
+  // por setup
+  const g={};L.forEach(x=>{const k=x.t.setup||"Sem setup";(g[k]=g[k]||[]).push(x)});
+  const rows=Object.entries(g).map(([k,a])=>{const rs=a.map(x=>x.c.R).filter(r=>r!=null);return {k,n:a.length,r:rs.length?rs.reduce((s,r)=>s+r,0)/rs.length:0,w:a.filter(x=>x.c.total>0).length}}).sort((a,b)=>b.r-a.r);
+  const mr=Math.max(...rows.map(r=>Math.abs(r.r)),0.1);
+  $("v-desempenho").innerHTML=`
+  <div class="top"><div><div class="h1">Desempenho</div><div class="sub">${L.length} operação(ões) encerrada(s)</div></div></div>
+  ${chips}
+  <div class="kpis">
+   <div class="k"><span>Taxa de acerto</span><b>${Math.round(wins.length/L.length*100)}%</b></div>
+   <div class="k"><span>Média por operação</span><b class="${cls(avgR)}">${rfmt(avgR)}</b></div>
+   <div class="k"><span>Resultado</span><b class="${cls(tot)}">${smoney(tot)}</b></div>
+   <div class="k"><span>Ganho médio / perda média</span><b>${payoff==null?"—":num(payoff,1)}</b></div>
+  </div>
+  <div class="card"><div class="ch"><b>Curva de capital</b><span class="sub">${smoney(lastV)}</span></div><div class="chart">${svg}</div></div>
+  <div class="card"><div class="ch"><b>Por setup</b><span class="sub">média em R</span></div><div class="bars">
+   ${rows.map(r=>`<div class="l"><span>${esc(r.k)} <small style="color:var(--dim)">(${r.w}/${r.n})</small></span><div class="t"><i style="${r.r>=0?`left:0;width:${r.r/mr*100}%;background:var(--up)`:`left:0;width:${Math.abs(r.r)/mr*100}%;background:var(--dn)`}"></i></div><b class="${cls(r.r)}">${rfmt(r.r)}</b></div>`).join("")}
+  </div></div>`;
+  bindPerf();
+}
+function bindPerf(){const f=$("pFil");if(f)f.onclick=e=>{const b=e.target.closest("button");if(b){perf=b.dataset.v;renderDesempenho()}}}
+
+/* ---------- AJUSTES ---------- */
+function renderAjustes(){
+  const s=DB.settings;
+  $("v-ajustes").innerHTML=`
+  <div class="top"><div><div class="h1">Ajustes</div><div class="sub">Salvo neste aparelho</div></div></div>
+  <div class="card"><div class="ch"><b>Gestão de risco</b></div>
+   <div class="row2"><div class="f"><label for="aCart">Carteira (R$)</label><input id="aCart" inputmode="decimal" value="${s.carteira?num(s.carteira):""}" placeholder="0,00"></div>
+   <div class="f"><label for="aRisco">Risco por operação (%)</label><input id="aRisco" inputmode="decimal" value="${num(s.riscoPct,s.riscoPct%1?1:0)}"></div></div>
+   <p class="hint">Usados para sugerir a quantidade na nova operação.</p>
+   <button class="btn gh" type="button" id="aSave">Salvar</button></div>
+  <div class="card"><div class="ch"><b>Setups</b><button class="btn gh sm" type="button" id="aAdd" style="height:36px">+ Adicionar</button></div>
+   <div>${s.setups.map((x,i)=>`<div class="setrow"><span>${esc(x)}</span><button class="x" type="button" data-del="${i}" aria-label="Remover ${esc(x)}">×</button></div>`).join("")||`<p class="hint">Nenhum setup.</p>`}</div></div>
+  <div class="card"><div class="ch"><b>Cópia de segurança</b><span class="sub">${DB.trades.length} operação(ões)</span></div>
+   <p class="hint" style="font-size:14px">Os dados ficam só neste aparelho. Exporte um backup de vez em quando e guarde no iCloud, Drive ou WhatsApp.</p>
+   <button class="btn" type="button" id="bkExport">Exportar backup</button>
+   <label class="btn gh" for="bkFile">Importar backup</label><input type="file" id="bkFile" accept=".json,application/json" hidden>
+   <p class="hint" id="bkMsg" hidden></p></div>`;
+  $("aSave").onclick=()=>{const c=parseNum($("aCart").value),r=parseNum($("aRisco").value);if(c>=0||!$("aCart").value)s.carteira=c>0?c:0;if(r>0)s.riscoPct=r;if(save())toast("Ajustes salvos")};
+  $("aAdd").onclick=()=>{openSheet(`<div class="handle"></div><h2 id="shTitle">Novo setup</h2><div class="f"><label for="sNome">Nome do setup</label><input id="sNome" maxlength="30" style="font-weight:600"></div><button class="btn" type="button" id="sOk">Adicionar</button>`);$("sNome").focus();$("sOk").onclick=()=>{const v=$("sNome").value.trim();if(v&&!s.setups.includes(v)){s.setups.push(v);save()}closeSheet();renderAjustes()}};
+  $("v-ajustes").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{s.setups.splice(Number(b.dataset.del),1);save();renderAjustes()});
+  $("bkExport").onclick=exportBk;$("bkFile").onchange=importBk;
+}
+async function exportBk(){
+  const name=`trade-notes-backup-${todayISO()}.json`;
+  const file=new File([JSON.stringify({app:"Trade Notes",versao:1,exportadoEm:new Date().toISOString(),...DB},null,1)],name,{type:"application/json"});
+  const msg=t=>{$("bkMsg").textContent=t;$("bkMsg").hidden=false};
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});msg("Backup gerado: "+name);return}}catch(e){if(e.name==="AbortError")return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);msg("Backup gerado: "+name);
+}
+function importBk(e){
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{let d;try{d=JSON.parse(r.result);if(!Array.isArray(d.trades))throw 0}catch(x){$("bkMsg").textContent="Este arquivo não é um backup do Trade Notes.";$("bkMsg").hidden=false;return}
+    confirmSheet("Substituir os dados deste aparelho?",`O arquivo tem ${d.trades.length} operação(ões). As ${DB.trades.length} que estão aqui serão apagadas.`,"Substituir",()=>{DB={settings:{carteira:0,riscoPct:1,setups:DEFAULT_SETUPS.slice(),...d.settings},trades:d.trades};if(save()){closeSheet();renderAjustes();toast("Backup importado")}},true)};
+  r.readAsText(f);e.target.value="";
+}
+
+/* ---------- folha ---------- */
+function openSheet(html){$("sheetBody").innerHTML=html;$("sheet").hidden=false;document.body.style.overflow="hidden"}
+function closeSheet(){$("sheet").hidden=true;document.body.style.overflow=""}
+$("backdrop").onclick=closeSheet;
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("sheet").hidden)closeSheet()});
+document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g){location.hash=g.dataset.go}});
+
+route();
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+</body>
+</html>
