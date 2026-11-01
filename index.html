@@ -448,7 +448,7 @@ function renderHistorico(){
   const label=histMode==="mes"?mesNome(histMonth):histYear;
   $("v-historico").innerHTML=`
   <div class="top"><div><div class="h1">Histórico</div><div class="sub">${list.length} encerrada(s)${plist.length?` · ${plist.length} parcial(is)`:""}</div></div></div>
-  <div class="chips" id="hMode"><button type="button" data-v="mes" aria-pressed="${histMode==="mes"}">Mês</button><button type="button" data-v="ano" aria-pressed="${histMode==="ano"}">Ano inteiro</button></div>
+  <div class="chips" id="hMode"><button type="button" data-v="mes" aria-pressed="${histMode==="mes"}">Mês</button><button type="button" data-v="ano" aria-pressed="${histMode==="ano"}">Ano</button></div>
   ${pnav("hist",label)}
   <div class="kpis"><div class="k"><span>Resultado realizado</span><b class="${cls(tot)}">${smoney(tot)}</b></div><div class="k"><span>Acertos (encerradas)</span><b>${list.filter(x=>x.c.total>0).length} de ${list.length}</b></div></div>
   ${plist.length?`<div class="card list"><div class="ch"><b>Parciais de operações abertas</b><span class="sub ${cls(totP)}">${smoney(totP)}</span></div>${plist.map(({t,r})=>`<button class="item" type="button" data-go="op-${t.id}" style="background:none;border:0;border-bottom:1px solid var(--line);width:100%;text-align:left">${logo(t.ativo)}<div class="t"><b>${esc(t.ativo)}</b><small>Parcial · ${r.qtd} ${un(t)} a ${num(r.preco)} · ${dateBR(r.data)}</small></div><div class="v ${cls(r.lucro)}">${smoney(r.lucro)}</div></button>`).join("")}</div>`:""}
