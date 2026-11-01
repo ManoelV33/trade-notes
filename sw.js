@@ -1,4 +1,4 @@
-const CACHE = "tn-v4";
+const CACHE = "tn-v5";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-180-v2.png", "./icon-192-v2.png", "./icon-512-v2.png",
   "./fonts/manrope-latin-400-normal.woff2", "./fonts/manrope-latin-600-normal.woff2", "./fonts/manrope-latin-700-normal.woff2"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });

@@ -173,7 +173,8 @@ let tt;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clear
 
 /* ---------- dados ---------- */
 const KEY="tn_data_v1";
-const DEFAULT_SETUPS=["Rompimento","Pullback","Fundo duplo"];
+const DEFAULT_SETUPS=["Rompimento","Pullback","Drawdown"];
+const SETUPS=DEFAULT_SETUPS;
 function loadData(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(d&&Array.isArray(d.trades))return {settings:{carteira:0,riscoPct:1,setups:DEFAULT_SETUPS.slice(),...d.settings},trades:d.trades}}catch(e){}return {settings:{carteira:0,riscoPct:1,setups:DEFAULT_SETUPS.slice()},trades:[]}}
 let DB=loadData();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));return true}catch(e){toast("Não foi possível salvar neste aparelho");return false}}
@@ -272,13 +273,14 @@ function renderAbertas(){
 /* ---------- NOVA OPERAÇÃO ---------- */
 const NF={tipo:"Ação",setup:"",useStop:true,useAlvo:true};
 function renderNova(){
-  const s=DB.settings;NF.tipo="Ação";NF.setup=s.setups[0]||"";NF.useStop=s.useStop!==false;NF.useAlvo=s.useAlvo!==false;
+  const s=DB.settings;NF.tipo="Ação";NF.setup=SETUPS[0];NF.outro=false;NF.useStop=s.useStop!==false;NF.useAlvo=s.useAlvo!==false;
   $("v-nova").innerHTML=`
   <div class="top"><a class="ib" href="#${backTo}" aria-label="Fechar">×</a><div class="h1">Nova operação</div><span style="width:42px"></span></div>
   <div class="row2"><div class="f"><label for="nAtivo">Ativo</label><input id="nAtivo" placeholder="ITUB4" autocapitalize="characters" autocomplete="off" maxlength="12"></div>
    <div class="f"><label for="nData">Data da entrada</label><input id="nData" type="date" value="${todayISO()}"></div></div>
   <div class="f"><span class="lab">Tipo</span><div class="chips" id="nTipo">${["Ação","ETF","BDR","FII"].map(x=>`<button type="button" data-v="${x}" aria-pressed="${x==="Ação"}">${x}</button>`).join("")}</div></div>
-  <div class="f"><span class="lab">Setup</span><div class="chips" id="nSetup">${s.setups.map((x,i)=>`<button type="button" data-v="${esc(x)}" aria-pressed="${i===0}">${esc(x)}</button>`).join("")}<button type="button" data-new="1">+ novo</button></div></div>
+  <div class="f"><span class="lab">Setup</span><div class="chips" id="nSetup">${SETUPS.map((x,i)=>`<button type="button" data-v="${esc(x)}" aria-pressed="${i===0}">${esc(x)}</button>`).join("")}<button type="button" data-v="__outro" aria-pressed="false">Outro</button></div>
+   <input id="nOutro" maxlength="40" placeholder="Qual setup? Ex.: pivô de alta" autocomplete="off" style="font-weight:600;margin-top:4px" hidden></div>
   <div class="f"><span class="lab">Definir agora</span><div class="toggles" id="nOpt">
    <button type="button" data-o="useStop" aria-pressed="${NF.useStop}"><span class="sw"></span>Stop</button>
    <button type="button" data-o="useAlvo" aria-pressed="${NF.useAlvo}"><span class="sw"></span>Alvo</button></div></div>
@@ -322,9 +324,9 @@ function renderNova(){
   $("nOpt").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.o;NF[k]=!NF[k];DB.settings[k]=NF[k];b.setAttribute("aria-pressed",NF[k]);upd()};
   $("nTipo").onclick=e=>{const b=e.target.closest("button");if(!b)return;NF.tipo=b.dataset.v;[...$("nTipo").children].forEach(x=>x.setAttribute("aria-pressed",x===b));upd()};
   $("nSetup").onclick=e=>{const b=e.target.closest("button");if(!b)return;
-    if(b.dataset.new){openSheet(`<div class="handle"></div><h2 id="shTitle">Novo setup</h2><div class="f"><label for="sNome">Nome do setup</label><input id="sNome" maxlength="30" placeholder="Ex.: Pivô de alta" style="font-weight:600"></div><button class="btn" type="button" id="sOk">Adicionar</button>`);
-      $("sNome").focus();$("sOk").onclick=()=>{const v=$("sNome").value.trim();if(!v)return;if(!DB.settings.setups.includes(v)){DB.settings.setups.push(v);save()}closeSheet();const keep=readNova();renderNova();writeNova(keep);NF.setup=v;[...$("nSetup").children].forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===v))};return}
-    NF.setup=b.dataset.v;[...$("nSetup").children].forEach(x=>x.setAttribute("aria-pressed",x===b))};
+    NF.outro=b.dataset.v==="__outro";NF.setup=NF.outro?"":b.dataset.v;
+    [...$("nSetup").children].forEach(x=>x.setAttribute("aria-pressed",x===b));
+    $("nOutro").hidden=!NF.outro;if(NF.outro)$("nOutro").focus()};
   $("nSave").onclick=()=>saveNova();
   upd();
 }
@@ -335,13 +337,15 @@ function saveNova(){
   const e=parseNum($("nEnt").value),st=parseNum($("nStop").value),a=parseNum($("nAlvo").value),q=Math.floor(parseNum($("nQtd").value)),tax=parseNum($("nTax").value)||0;
   const err=m=>{$("nErr").textContent=m;$("nErr").hidden=false;return false};
   if(!ativo)return err("Informe o código do ativo, por exemplo ITUB4.");
+  const setup=NF.outro?$("nOutro").value.trim():NF.setup;
+  if(NF.outro&&!setup)return err("Escreva qual é o setup, ou escolha uma das opções.");
   if(!(e>0))return err("Informe o preço de entrada.");
   if(NF.useStop){if(!(st>0))return err("Informe o stop, ou desligue a opção Stop.");if(!(st<e))return err("O stop precisa ficar abaixo da entrada (operação de compra).")}
   if(NF.useAlvo){if(!(a>0))return err("Informe o alvo, ou desligue a opção Alvo.");if(!(a>e))return err("O alvo precisa ficar acima da entrada.")}
   if(!(q>0))return err("Informe a quantidade comprada.");
   if(NF.useStop){const cart=parseNum($("nCart").value),rp=parseNum($("nRisco").value);if(cart>0)DB.settings.carteira=cart;if(rp>0)DB.settings.riscoPct=rp}
   DB.settings.useStop=NF.useStop;DB.settings.useAlvo=NF.useAlvo;
-  const t={id:uid(),ativo,tipo:NF.tipo,moeda:"BRL",setup:NF.setup,status:"aberta",criado:new Date().toISOString(),
+  const t={id:uid(),ativo,tipo:NF.tipo,moeda:"BRL",setup,status:"aberta",criado:new Date().toISOString(),
     plano:{entrada:e,stop:NF.useStop?st:null,alvo:NF.useAlvo?a:null,parcial:$("nParc").value.trim()},
     eventos:[{id:uid(),ord:"0",tipo:"entrada",data,preco:e,qtd:q,taxas:tax,texto:$("nMot").value.trim()}]};
   DB.trades.push(t);
@@ -490,16 +494,12 @@ function renderAjustes(){
    <div class="f"><label for="aRisco">Risco por operação (%)</label><input id="aRisco" inputmode="decimal" value="${num(s.riscoPct,s.riscoPct%1?1:0)}"></div></div>
    <p class="hint">Usados para sugerir a quantidade na nova operação.</p>
    <button class="btn gh" type="button" id="aSave">Salvar</button></div>
-  <div class="card"><div class="ch"><b>Setups</b><button class="btn gh sm" type="button" id="aAdd" style="height:36px">+ Adicionar</button></div>
-   <div>${s.setups.map((x,i)=>`<div class="setrow"><span>${esc(x)}</span><button class="x" type="button" data-del="${i}" aria-label="Remover ${esc(x)}">×</button></div>`).join("")||`<p class="hint">Nenhum setup.</p>`}</div></div>
   <div class="card"><div class="ch"><b>Cópia de segurança</b><span class="sub">${DB.trades.length} operação(ões)</span></div>
    <p class="hint" style="font-size:14px">Os dados ficam só neste aparelho. Exporte um backup de vez em quando e guarde no iCloud, Drive ou WhatsApp.</p>
    <button class="btn" type="button" id="bkExport">Exportar backup</button>
    <label class="btn gh" for="bkFile">Importar backup</label><input type="file" id="bkFile" accept=".json,application/json" hidden>
    <p class="hint" id="bkMsg" hidden></p></div>`;
   $("aSave").onclick=()=>{const c=parseNum($("aCart").value),r=parseNum($("aRisco").value);if(c>=0||!$("aCart").value)s.carteira=c>0?c:0;if(r>0)s.riscoPct=r;if(save())toast("Ajustes salvos")};
-  $("aAdd").onclick=()=>{openSheet(`<div class="handle"></div><h2 id="shTitle">Novo setup</h2><div class="f"><label for="sNome">Nome do setup</label><input id="sNome" maxlength="30" style="font-weight:600"></div><button class="btn" type="button" id="sOk">Adicionar</button>`);$("sNome").focus();$("sOk").onclick=()=>{const v=$("sNome").value.trim();if(v&&!s.setups.includes(v)){s.setups.push(v);save()}closeSheet();renderAjustes()}};
-  $("v-ajustes").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{s.setups.splice(Number(b.dataset.del),1);save();renderAjustes()});
   $("bkExport").onclick=exportBk;$("bkFile").onchange=importBk;
 }
 async function exportBk(){
