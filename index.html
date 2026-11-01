@@ -173,7 +173,7 @@ let tt;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clear
 
 /* ---------- dados ---------- */
 const KEY="tn_data_v1";
-const DEFAULT_SETUPS=["Rompimento","Pullback","Drawdown"];
+const DEFAULT_SETUPS=["Rompimento","Pivô de alta","Drawdown"];
 const SETUPS=DEFAULT_SETUPS;
 function loadData(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(d&&Array.isArray(d.trades))return {settings:{carteira:0,riscoPct:1,setups:DEFAULT_SETUPS.slice(),...d.settings},trades:d.trades}}catch(e){}return {settings:{carteira:0,riscoPct:1,setups:DEFAULT_SETUPS.slice()},trades:[]}}
 let DB=loadData();
