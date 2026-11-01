@@ -183,11 +183,11 @@ const byId=id=>DB.trades.find(t=>t.id===id);
 /* ---------- cálculos de uma operação ---------- */
 function calc(t){
   const ev=[...t.eventos].sort((a,b)=>(a.data+a.ord).localeCompare(b.data+b.ord));
-  let qIn=0,cost=0,fees=0,qOut=0,realized=0,stop=t.plano.stop??null,firstStop=t.plano.stop??null,alvo=t.plano.alvo??null,parciais=0,price=null,cotData=null;
+  let qIn=0,cost=0,fees=0,entryFees=0,exitFees=0,qOut=0,realized=0,reals=[],stop=t.plano.stop??null,firstStop=t.plano.stop??null,alvo=t.plano.alvo??null,parciais=0,price=null,cotData=null;
   for(const e of ev){
     fees+=e.taxas||0;
-    if(e.tipo==="entrada"){qIn+=e.qtd;cost+=e.qtd*e.preco;price=e.preco;cotData=null}
-    else if(e.tipo==="parcial"||e.tipo==="saida"){const avg=qIn?cost/qIn:0;realized+=(e.preco-avg)*e.qtd;qOut+=e.qtd;price=e.preco;cotData=null;if(e.tipo==="parcial")parciais++}
+    if(e.tipo==="entrada"){qIn+=e.qtd;cost+=e.qtd*e.preco;price=e.preco;cotData=null;entryFees+=e.taxas||0}
+    else if(e.tipo==="parcial"||e.tipo==="saida"){const avg=qIn?cost/qIn:0,g=(e.preco-avg)*e.qtd;realized+=g;exitFees+=e.taxas||0;reals.push({tipo:e.tipo,data:e.data,qtd:e.qtd,preco:e.preco,lucro:g-(e.taxas||0)});qOut+=e.qtd;price=e.preco;cotData=null;if(e.tipo==="parcial")parciais++}
     else if(e.tipo==="stop"){stop=e.para;if(firstStop==null)firstStop=e.para}
     else if(e.tipo==="alvo"){alvo=e.para}
     else if(e.tipo==="cotacao"){price=e.preco;cotData=e.data}
@@ -201,7 +201,9 @@ function calc(t){
   const entradaData=ev.find(e=>e.tipo==="entrada")?.data||t.criado;
   const saida=ev.filter(e=>e.tipo==="saida").pop();
   const pctRes=cost>0?total/cost*100:0;
-  return {avg,qIn,open,stop,alvo,firstStop,price,cotData,realized,unreal,fees,total,R,riskIni,riskNow,parciais,entradaData,saidaData:saida?.data||null,pctRes,ev};
+  const aberta=t.status==="aberta";
+  const emAberto=aberta?unreal-entryFees:0, realizado=aberta?realized-exitFees:total;
+  return {emAberto,realizado,reals,avg,qIn,open,stop,alvo,firstStop,price,cotData,realized,unreal,fees,total,R,riskIni,riskNow,parciais,entradaData,saidaData:saida?.data||null,pctRes,ev};
 }
 
 /* ---------- navegação ---------- */
@@ -256,16 +258,16 @@ function rPill(c){if(c.firstStop==null)return `<span class="pill n">sem stop</sp
 /* ---------- ABERTAS ---------- */
 function renderAbertas(){
   const open=DB.trades.filter(t=>t.status==="aberta").map(t=>({t,c:calc(t)})).sort((a,b)=>b.c.entradaData.localeCompare(a.c.entradaData));
-  const tot=open.reduce((s,x)=>s+x.c.total,0),risk=open.reduce((s,x)=>s+(x.c.riskNow||0),0),semStop=open.filter(x=>x.c.riskNow==null).length;
+  const tot=open.reduce((s,x)=>s+x.c.emAberto,0),realz=open.reduce((s,x)=>s+x.c.realizado,0),temParc=open.some(x=>x.c.parciais),risk=open.reduce((s,x)=>s+(x.c.riskNow||0),0),semStop=open.filter(x=>x.c.riskNow==null).length;
   $("v-abertas").innerHTML=`
   <div class="top"><div><div class="brand">Trade<b>Notes</b></div><div class="sub">${open.length?`${open.length} posição(ões) aberta(s)`:"Nenhuma posição aberta"}</div></div></div>
-  ${open.length?`<div class="kpis"><div class="k"><span>Resultado das abertas</span><b class="${cls(tot)}">${smoney(tot)}</b></div><div class="k"><span>Risco em jogo${semStop?` · ${semStop} sem stop`:""}</span><b>${money(risk)}</b></div></div>`:""}
+  ${open.length?`<div class="kpis"><div class="k"><span>Em aberto</span><b class="${cls(tot)}">${smoney(tot)}</b></div>${temParc?`<div class="k"><span>Realizado em parciais</span><b class="${cls(realz)}">${smoney(realz)}</b></div>`:""}<div class="k"${temParc?' style="grid-column:1/-1"':""}><span>Risco em jogo${semStop?` · ${semStop} sem stop`:""}</span><b>${money(risk)}</b></div></div>`:""}
   ${open.map(({t,c})=>{
     const ate=c.price&&c.alvo!=null?(c.alvo-c.price)/c.price*100:null;
     return `<button class="card" type="button" data-go="op-${t.id}">
      <div class="ch"><div class="tk">${logo(t.ativo)}<div><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${c.open} de ${c.qIn} ${t.tipo==="FII"?"cotas":"ações"}</small></div></div>${rPill(c)}</div>
      ${ladder(t,c)}
-     <div class="meta"><div>Resultado<b class="${cls(c.total)}">${smoney(c.total)}</b></div><div>Até o alvo<b>${c.alvo==null?"sem alvo":ate==null?"—":pct(ate)}</b></div><div>${c.parciais?"Parciais":"Cotação"}<b>${c.parciais?`${c.parciais} feita(s)`:(c.cotData?dateBR(c.cotData):"da entrada")}</b></div></div>
+     <div class="meta"><div>Em aberto<b class="${cls(c.emAberto)}">${smoney(c.emAberto)}</b></div>${c.parciais?`<div>Realizado<b class="${cls(c.realizado)}">${smoney(c.realizado)}</b></div>`:""}<div>Até o alvo<b>${c.alvo==null?"sem alvo":ate==null?"—":pct(ate)}</b></div>${c.parciais?"":`<div>Cotação<b>${c.cotData?dateBR(c.cotData):"da entrada"}</b></div>`}</div>
     </button>`}).join("")}
   ${open.length?"":`<div class="empty"><span>Registre sua primeira operação: o app calcula o risco, a quantidade e a relação risco/retorno.</span><a class="btn sm" href="#nova">Nova operação</a></div>`}`;
 }
@@ -371,11 +373,14 @@ function renderOp(id){
   $("v-op").innerHTML=`
   <div class="top"><a class="ib" href="#${backTo}" aria-label="Voltar">‹</a><div style="text-align:center;min-width:0"><div class="h1" style="font-size:18px">${esc(t.ativo)}</div><div class="sub">${esc([t.tipo,t.setup].filter(Boolean).join(" · "))}${aberta?"":" · encerrada"}</div></div>${rPill(c)}</div>
   <div class="kpis">
-   <div class="k"><span>Resultado${aberta?" (com abertas)":""}</span><b class="${cls(c.total)}">${smoney(c.total)}</b></div>
-   <div class="k"><span>${aberta?"Posição atual":"Retorno"}</span><b>${aberta?`${c.open} ${t.tipo==="FII"?"cotas":"ações"}`:pct(c.pctRes)}</b></div>
+   ${aberta?`<div class="k"><span>Em aberto · ${c.open} ${t.tipo==="FII"?"cotas":"ações"}</span><b class="${cls(c.emAberto)}">${smoney(c.emAberto)}</b></div>
+   <div class="k"><span>Realizado${c.parciais?` · ${c.parciais} parcial(is)`:""}</span><b class="${cls(c.realizado)}">${c.parciais?smoney(c.realizado):"—"}</b></div>`
+   :`<div class="k"><span>Resultado</span><b class="${cls(c.total)}">${smoney(c.total)}</b></div>
+   <div class="k"><span>Retorno</span><b>${pct(c.pctRes)}</b></div>`}
    <div class="k"><span>Preço médio</span><b>${num(c.avg)}</b></div>
    <div class="k"><span>${aberta?"Stop atual":"Risco inicial"}</span><b>${aberta?(c.stop!=null?num(c.stop):'<span style="color:var(--muted)">sem stop</span>'):(c.riskIni>0?money(c.riskIni):'<span style="color:var(--muted)">sem stop</span>')}</b></div>
   </div>
+  ${aberta&&c.parciais?`<p class="hint">Total da operação: <b class="${cls(c.total)}">${smoney(c.total)}</b> (realizado + em aberto)</p>`:""}
   ${aberta?`<div class="card">${ladder(t,c)}<div class="meta"><div>Cotação<b>${c.price!=null?num(c.price):"—"}</b></div><div>Risco em jogo<b>${c.riskNow==null?"sem stop":money(c.riskNow)}</b></div><div>Alvo<b>${c.alvo!=null?num(c.alvo):"sem alvo"}</b></div></div>
    ${t.plano.parcial?`<p class="hint">Parcial planejada: ${esc(t.plano.parcial)}</p>`:""}</div>
    <div class="row2"><button class="btn gh" type="button" data-act="cotacao">Atualizar cotação</button><button class="btn gh" type="button" data-act="parcial">Parcial</button></div>
@@ -426,17 +431,24 @@ function confirmSheet(title,text,ok,fn,danger){
 /* ---------- HISTÓRICO ---------- */
 let histSetup="Todos";
 function renderHistorico(){
-  const closed=DB.trades.filter(t=>t.status==="encerrada").map(t=>({t,c:calc(t)})).sort((a,b)=>(b.c.saidaData||"").localeCompare(a.c.saidaData||""));
-  const setups=["Todos",...new Set(closed.map(x=>x.t.setup).filter(Boolean))];
+  const all=DB.trades.map(t=>({t,c:calc(t)}));
+  const closed=all.filter(x=>x.t.status==="encerrada").sort((a,b)=>(b.c.saidaData||"").localeCompare(a.c.saidaData||""));
+  const parts=[];all.filter(x=>x.t.status==="aberta").forEach(({t,c})=>c.reals.filter(r=>r.tipo==="parcial").forEach(r=>parts.push({t,r})));
+  parts.sort((a,b)=>b.r.data.localeCompare(a.r.data));
+  const setups=["Todos",...new Set([...closed.map(x=>x.t.setup),...parts.map(x=>x.t.setup)].filter(Boolean))];
   if(!setups.includes(histSetup))histSetup="Todos";
-  const list=closed.filter(x=>histSetup==="Todos"||x.t.setup===histSetup);
-  const tot=list.reduce((s,x)=>s+x.c.total,0);
+  const fil=x=>histSetup==="Todos"||x.t.setup===histSetup;
+  const list=closed.filter(fil),plist=parts.filter(fil);
+  const totC=list.reduce((s,x)=>s+x.c.total,0),totP=plist.reduce((s,x)=>s+x.r.lucro,0),tot=totC+totP;
+  const un=t=>t.tipo==="FII"?"cotas":"ações";
+  const has=closed.length||parts.length;
   $("v-historico").innerHTML=`
-  <div class="top"><div><div class="h1">Histórico</div><div class="sub">${list.length} operação(ões) encerrada(s)</div></div></div>
-  ${closed.length?`<div class="chips" id="hFil">${setups.map(s=>`<button type="button" data-v="${esc(s)}" aria-pressed="${s===histSetup}">${esc(s)}</button>`).join("")}</div>
-  <div class="kpis"><div class="k"><span>Resultado</span><b class="${cls(tot)}">${smoney(tot)}</b></div><div class="k"><span>Acertos</span><b>${list.filter(x=>x.c.total>0).length} de ${list.length}</b></div></div>
-  <div class="card list">${list.map(({t,c})=>`<button class="item" type="button" data-go="op-${t.id}" style="background:none;border:0;border-bottom:1px solid var(--line);width:100%;text-align:left">${logo(t.ativo)}<div class="t"><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${dateBR(c.entradaData)} → ${dateBR(c.saidaData)}</small></div><div class="v ${cls(c.total)}">${smoney(c.total)}<small>${rfmt(c.R)} · ${pct(c.pctRes)}</small></div></button>`).join("")}</div>`
-  :`<div class="empty"><span>As operações encerradas aparecem aqui, com o resultado em R$, em % e em R.</span></div>`}`;
+  <div class="top"><div><div class="h1">Histórico</div><div class="sub">${list.length} encerrada(s)${plist.length?` · ${plist.length} parcial(is)`:""}</div></div></div>
+  ${has?`<div class="chips" id="hFil">${setups.map(s=>`<button type="button" data-v="${esc(s)}" aria-pressed="${s===histSetup}">${esc(s)}</button>`).join("")}</div>
+  <div class="kpis"><div class="k"><span>Resultado realizado</span><b class="${cls(tot)}">${smoney(tot)}</b></div><div class="k"><span>Acertos (encerradas)</span><b>${list.filter(x=>x.c.total>0).length} de ${list.length}</b></div></div>
+  ${plist.length?`<div class="card list"><div class="ch"><b>Parciais de operações abertas</b><span class="sub ${cls(totP)}">${smoney(totP)}</span></div>${plist.map(({t,r})=>`<button class="item" type="button" data-go="op-${t.id}" style="background:none;border:0;border-bottom:1px solid var(--line);width:100%;text-align:left">${logo(t.ativo)}<div class="t"><b>${esc(t.ativo)}</b><small>Parcial · ${r.qtd} ${un(t)} a ${num(r.preco)} · ${dateBR(r.data)}</small></div><div class="v ${cls(r.lucro)}">${smoney(r.lucro)}</div></button>`).join("")}</div>`:""}
+  ${list.length?`<div class="card list"><div class="ch"><b>Operações encerradas</b><span class="sub ${cls(totC)}">${smoney(totC)}</span></div>${list.map(({t,c})=>`<button class="item" type="button" data-go="op-${t.id}" style="background:none;border:0;border-bottom:1px solid var(--line);width:100%;text-align:left">${logo(t.ativo)}<div class="t"><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${dateBR(c.entradaData)} → ${dateBR(c.saidaData)}</small></div><div class="v ${cls(c.total)}">${smoney(c.total)}<small>${rfmt(c.R)} · ${pct(c.pctRes)}</small></div></button>`).join("")}</div>`:""}`
+  :`<div class="empty"><span>As parciais e as operações encerradas aparecem aqui, com o resultado em R$, em % e em R.</span></div>`}`;
   const f=$("hFil");if(f)f.onclick=e=>{const b=e.target.closest("button");if(b){histSetup=b.dataset.v;renderHistorico()}};
 }
 
