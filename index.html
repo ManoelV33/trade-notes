@@ -79,6 +79,9 @@ button.card:active{background:#002050}
 .chips button{border:0;font-size:13px;font-weight:700;padding:8px 12px;border-radius:999px;background:var(--surf2);color:var(--muted)}
 .chips button[aria-pressed="true"]{background:var(--acc);color:var(--on)}
 .row3 .btn{padding:0 6px;font-size:13.5px;white-space:nowrap}
+.pnav{display:flex;align-items:center;justify-content:space-between;background:var(--surf);border-radius:14px;padding:6px}
+.pnav .ib{width:38px;height:38px;background:var(--surf2)}
+.pnav b{font-size:16px}
 .toggles{display:flex;gap:8px}
 .toggles button{flex:1;display:flex;align-items:center;gap:10px;border:0;border-radius:12px;background:var(--surf2);color:var(--muted);font-weight:700;font-size:14px;padding:10px 12px}
 .toggles button[aria-pressed="true"]{color:var(--ink)}
@@ -169,6 +172,10 @@ function parseNum(s){if(s==null)return NaN;s=String(s).trim().replace(/R\$\s?/,"
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const dateBR=iso=>{if(!iso)return"";const [y,m,d]=iso.slice(0,10).split("-");return `${d}/${m}/${y.slice(2)}`};
 const cls=v=>v>0?"pos":v<0?"neg":"";
+const MESES=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const mesNome=m=>{const [y,mo]=m.split("-").map(Number);const n=MESES[mo-1];return n.charAt(0).toUpperCase()+n.slice(1)+" "+y};
+const shiftM=(m,d)=>{let [y,mo]=m.split("-").map(Number);mo+=d;while(mo<1){mo+=12;y--}while(mo>12){mo-=12;y++}return `${y}-${pad(mo)}`};
+const pnav=(id,label)=>`<div class="pnav"><button type="button" class="ib" data-pn="${id}" data-d="-1" aria-label="Anterior">‹</button><b>${label}</b><button type="button" class="ib" data-pn="${id}" data-d="1" aria-label="Próximo">›</button></div>`;
 let tt;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200)}
 
 /* ---------- dados ---------- */
@@ -261,13 +268,12 @@ function renderAbertas(){
   const tot=open.reduce((s,x)=>s+x.c.emAberto,0),realz=open.reduce((s,x)=>s+x.c.realizado,0),temParc=open.some(x=>x.c.parciais),risk=open.reduce((s,x)=>s+(x.c.riskNow||0),0),semStop=open.filter(x=>x.c.riskNow==null).length;
   $("v-abertas").innerHTML=`
   <div class="top"><div><div class="brand">Trade<b>Notes</b></div><div class="sub">${open.length?`${open.length} posição(ões) aberta(s)`:"Nenhuma posição aberta"}</div></div></div>
-  ${open.length?`<div class="kpis"><div class="k"><span>Em aberto</span><b class="${cls(tot)}">${smoney(tot)}</b></div>${temParc?`<div class="k"><span>Realizado em parciais</span><b class="${cls(realz)}">${smoney(realz)}</b></div>`:""}<div class="k"${temParc?' style="grid-column:1/-1"':""}><span>Risco em jogo${semStop?` · ${semStop} sem stop`:""}</span><b>${money(risk)}</b></div></div>`:""}
   ${open.map(({t,c})=>{
     const ate=c.price&&c.alvo!=null?(c.alvo-c.price)/c.price*100:null;
     return `<button class="card" type="button" data-go="op-${t.id}">
      <div class="ch"><div class="tk">${logo(t.ativo)}<div><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${c.open} de ${c.qIn} ${t.tipo==="FII"?"cotas":"ações"}</small></div></div>${rPill(c)}</div>
      ${ladder(t,c)}
-     <div class="meta"><div>Em aberto<b class="${cls(c.emAberto)}">${smoney(c.emAberto)}</b></div>${c.parciais?`<div>Realizado<b class="${cls(c.realizado)}">${smoney(c.realizado)}</b></div>`:""}<div>Até o alvo<b>${c.alvo==null?"sem alvo":ate==null?"—":pct(ate)}</b></div>${c.parciais?"":`<div>Cotação<b>${c.cotData?dateBR(c.cotData):"da entrada"}</b></div>`}</div>
+     <div class="meta"><div>Em aberto<b class="${cls(c.emAberto)}">${smoney(c.emAberto)}</b></div>${c.parciais?`<div>Realizado<b class="${cls(c.realizado)}">${smoney(c.realizado)}</b></div>`:""}<div>Cotação<b>${c.price!=null?num(c.price):"—"}</b></div></div>
     </button>`}).join("")}
   ${open.length?"":`<div class="empty"><span>Registre sua primeira operação: o app calcula o risco, a quantidade e a relação risco/retorno.</span><a class="btn sm" href="#nova">Nova operação</a></div>`}`;
 }
@@ -281,8 +287,8 @@ function renderNova(){
   <div class="row2"><div class="f"><label for="nAtivo">Ativo</label><input id="nAtivo" placeholder="ITUB4" autocapitalize="characters" autocomplete="off" maxlength="12"></div>
    <div class="f"><label for="nData">Data da entrada</label><input id="nData" type="date" value="${todayISO()}"></div></div>
   <div class="f"><span class="lab">Tipo</span><div class="chips" id="nTipo">${["Ação","ETF","BDR","FII"].map(x=>`<button type="button" data-v="${x}" aria-pressed="${x==="Ação"}">${x}</button>`).join("")}</div></div>
-  <div class="f"><span class="lab">Setup</span><div class="chips" id="nSetup">${SETUPS.map((x,i)=>`<button type="button" data-v="${esc(x)}" aria-pressed="${i===0}">${esc(x)}</button>`).join("")}<button type="button" data-v="__outro" aria-pressed="false">Outro</button></div>
-   <input id="nOutro" maxlength="40" placeholder="Qual setup? Ex.: pivô de alta" autocomplete="off" style="font-weight:600;margin-top:4px" hidden></div>
+  <div class="f"><span class="lab">Estratégia</span><div class="chips" id="nSetup">${SETUPS.map((x,i)=>`<button type="button" data-v="${esc(x)}" aria-pressed="${i===0}">${esc(x)}</button>`).join("")}<button type="button" data-v="__outro" aria-pressed="false">Outro</button></div>
+   <input id="nOutro" maxlength="40" placeholder="Qual estratégia? Ex.: canal de alta" autocomplete="off" style="font-weight:600;margin-top:4px" hidden></div>
   <div class="f"><span class="lab">Definir agora</span><div class="toggles" id="nOpt">
    <button type="button" data-o="useStop" aria-pressed="${NF.useStop}"><span class="sw"></span>Stop</button>
    <button type="button" data-o="useAlvo" aria-pressed="${NF.useAlvo}"><span class="sw"></span>Alvo</button></div></div>
@@ -340,7 +346,7 @@ function saveNova(){
   const err=m=>{$("nErr").textContent=m;$("nErr").hidden=false;return false};
   if(!ativo)return err("Informe o código do ativo, por exemplo ITUB4.");
   const setup=NF.outro?$("nOutro").value.trim():NF.setup;
-  if(NF.outro&&!setup)return err("Escreva qual é o setup, ou escolha uma das opções.");
+  if(NF.outro&&!setup)return err("Escreva qual é a estratégia, ou escolha uma das opções.");
   if(!(e>0))return err("Informe o preço de entrada.");
   if(NF.useStop){if(!(st>0))return err("Informe o stop, ou desligue a opção Stop.");if(!(st<e))return err("O stop precisa ficar abaixo da entrada (operação de compra).")}
   if(NF.useAlvo){if(!(a>0))return err("Informe o alvo, ou desligue a opção Alvo.");if(!(a>e))return err("O alvo precisa ficar acima da entrada.")}
@@ -429,43 +435,41 @@ function confirmSheet(title,text,ok,fn,danger){
 }
 
 /* ---------- HISTÓRICO ---------- */
-let histSetup="Todos";
+let histMode="mes",histMonth=todayISO().slice(0,7),histYear=todayISO().slice(0,4);
 function renderHistorico(){
   const all=DB.trades.map(t=>({t,c:calc(t)}));
-  const closed=all.filter(x=>x.t.status==="encerrada").sort((a,b)=>(b.c.saidaData||"").localeCompare(a.c.saidaData||""));
-  const parts=[];all.filter(x=>x.t.status==="aberta").forEach(({t,c})=>c.reals.filter(r=>r.tipo==="parcial").forEach(r=>parts.push({t,r})));
-  parts.sort((a,b)=>b.r.data.localeCompare(a.r.data));
-  const setups=["Todos",...new Set([...closed.map(x=>x.t.setup),...parts.map(x=>x.t.setup)].filter(Boolean))];
-  if(!setups.includes(histSetup))histSetup="Todos";
-  const fil=x=>histSetup==="Todos"||x.t.setup===histSetup;
-  const list=closed.filter(fil),plist=parts.filter(fil);
+  const inP=d=>d&&(histMode==="mes"?d.slice(0,7)===histMonth:d.slice(0,4)===histYear);
+  const list=all.filter(x=>x.t.status==="encerrada"&&inP(x.c.saidaData)).sort((a,b)=>(b.c.saidaData||"").localeCompare(a.c.saidaData||""));
+  const plist=[];all.filter(x=>x.t.status==="aberta").forEach(({t,c})=>c.reals.filter(r=>r.tipo==="parcial"&&inP(r.data)).forEach(r=>plist.push({t,r})));
+  plist.sort((a,b)=>b.r.data.localeCompare(a.r.data));
   const totC=list.reduce((s,x)=>s+x.c.total,0),totP=plist.reduce((s,x)=>s+x.r.lucro,0),tot=totC+totP;
   const un=t=>t.tipo==="FII"?"cotas":"ações";
-  const has=closed.length||parts.length;
+  const label=histMode==="mes"?mesNome(histMonth):histYear;
   $("v-historico").innerHTML=`
   <div class="top"><div><div class="h1">Histórico</div><div class="sub">${list.length} encerrada(s)${plist.length?` · ${plist.length} parcial(is)`:""}</div></div></div>
-  ${has?`<div class="chips" id="hFil">${setups.map(s=>`<button type="button" data-v="${esc(s)}" aria-pressed="${s===histSetup}">${esc(s)}</button>`).join("")}</div>
+  <div class="chips" id="hMode"><button type="button" data-v="mes" aria-pressed="${histMode==="mes"}">Mês</button><button type="button" data-v="ano" aria-pressed="${histMode==="ano"}">Ano inteiro</button></div>
+  ${pnav("hist",label)}
   <div class="kpis"><div class="k"><span>Resultado realizado</span><b class="${cls(tot)}">${smoney(tot)}</b></div><div class="k"><span>Acertos (encerradas)</span><b>${list.filter(x=>x.c.total>0).length} de ${list.length}</b></div></div>
   ${plist.length?`<div class="card list"><div class="ch"><b>Parciais de operações abertas</b><span class="sub ${cls(totP)}">${smoney(totP)}</span></div>${plist.map(({t,r})=>`<button class="item" type="button" data-go="op-${t.id}" style="background:none;border:0;border-bottom:1px solid var(--line);width:100%;text-align:left">${logo(t.ativo)}<div class="t"><b>${esc(t.ativo)}</b><small>Parcial · ${r.qtd} ${un(t)} a ${num(r.preco)} · ${dateBR(r.data)}</small></div><div class="v ${cls(r.lucro)}">${smoney(r.lucro)}</div></button>`).join("")}</div>`:""}
-  ${list.length?`<div class="card list"><div class="ch"><b>Operações encerradas</b><span class="sub ${cls(totC)}">${smoney(totC)}</span></div>${list.map(({t,c})=>`<button class="item" type="button" data-go="op-${t.id}" style="background:none;border:0;border-bottom:1px solid var(--line);width:100%;text-align:left">${logo(t.ativo)}<div class="t"><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${dateBR(c.entradaData)} → ${dateBR(c.saidaData)}</small></div><div class="v ${cls(c.total)}">${smoney(c.total)}<small>${rfmt(c.R)} · ${pct(c.pctRes)}</small></div></button>`).join("")}</div>`:""}`
-  :`<div class="empty"><span>As parciais e as operações encerradas aparecem aqui, com o resultado em R$, em % e em R.</span></div>`}`;
-  const f=$("hFil");if(f)f.onclick=e=>{const b=e.target.closest("button");if(b){histSetup=b.dataset.v;renderHistorico()}};
+  ${list.length?`<div class="card list"><div class="ch"><b>Operações encerradas</b><span class="sub ${cls(totC)}">${smoney(totC)}</span></div>${list.map(({t,c})=>`<button class="item" type="button" data-go="op-${t.id}" style="background:none;border:0;border-bottom:1px solid var(--line);width:100%;text-align:left">${logo(t.ativo)}<div class="t"><b>${esc(t.ativo)}</b><small>${esc(t.setup||t.tipo)} · ${dateBR(c.entradaData)} → ${dateBR(c.saidaData)}</small></div><div class="v ${cls(c.total)}">${smoney(c.total)}<small>${rfmt(c.R)} · ${pct(c.pctRes)}</small></div></button>`).join("")}</div>`:""}
+  ${!list.length&&!plist.length?`<div class="empty"><span>Nenhuma operação encerrada nem parcial em ${histMode==="mes"?mesNome(histMonth):histYear}.</span></div>`:""}`;
+  $("hMode").onclick=e=>{const b=e.target.closest("button");if(b){histMode=b.dataset.v;renderHistorico()}};
 }
 
 /* ---------- DESEMPENHO ---------- */
-let perf="90";
+let perf="90",perfYear=todayISO().slice(0,4);
 function renderDesempenho(){
   const all=DB.trades.filter(t=>t.status==="encerrada").map(t=>({t,c:calc(t)})).filter(x=>x.c.saidaData);
-  const lim=perf==="tudo"?null:new Date(Date.now()-Number(perf)*864e5).toISOString().slice(0,10);
-  const L=all.filter(x=>!lim||x.c.saidaData>=lim).sort((a,b)=>a.c.saidaData.localeCompare(b.c.saidaData));
+  const lim=perf==="tudo"||perf==="ano"?null:new Date(Date.now()-Number(perf)*864e5).toISOString().slice(0,10);
+  const L=all.filter(x=>perf==="ano"?x.c.saidaData.slice(0,4)===perfYear:(!lim||x.c.saidaData>=lim)).sort((a,b)=>a.c.saidaData.localeCompare(b.c.saidaData));
   const wins=L.filter(x=>x.c.total>0),loss=L.filter(x=>x.c.total<0);
   const tot=L.reduce((s,x)=>s+x.c.total,0);
   const Rs=L.map(x=>x.c.R).filter(r=>r!=null);
   const avgR=Rs.length?Rs.reduce((s,r)=>s+r,0)/Rs.length:null;
   const aw=wins.length?wins.reduce((s,x)=>s+x.c.total,0)/wins.length:0,al=loss.length?Math.abs(loss.reduce((s,x)=>s+x.c.total,0)/loss.length):0;
   const payoff=al>0?aw/al:null;
-  const chips=`<div class="chips" id="pFil">${[["30","30 dias"],["90","90 dias"],["365","12 meses"],["tudo","Tudo"]].map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${v===perf}">${l}</button>`).join("")}</div>`;
-  if(!L.length){$("v-desempenho").innerHTML=`<div class="top"><div><div class="h1">Desempenho</div><div class="sub">Sem operações encerradas no período</div></div></div>${chips}<div class="empty"><span>Encerre operações para ver taxa de acerto, resultado em R, curva de capital e o desempenho de cada setup.</span></div>`;bindPerf();return}
+  const chips=`<div class="chips" id="pFil">${[["30","30 dias"],["90","90 dias"],["ano","Ano"],["tudo","Tudo"]].map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${v===perf}">${l}</button>`).join("")}</div>${perf==="ano"?pnav("perf",perfYear):""}`;
+  if(!L.length){$("v-desempenho").innerHTML=`<div class="top"><div><div class="h1">Desempenho</div><div class="sub">Sem operações encerradas no período</div></div></div>${chips}<div class="empty"><span>Encerre operações para ver taxa de acerto, resultado em R, curva de capital e o desempenho de cada estratégia.</span></div>`;bindPerf();return}
   // curva
   let acc=0;const pts=[{v:0}].concat(L.map(x=>({v:acc+=x.c.total})));
   const W=Math.max(300,(document.querySelector(".app").clientWidth||400)-64),H=150,P=8;
@@ -475,7 +479,7 @@ function renderDesempenho(){
   const lastV=pts[pts.length-1].v,col=lastV>=0?"#1C6CFF":"#FF6B5B";
   const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de capital"><line x1="${P}" x2="${W-P}" y1="${Y(0)}" y2="${Y(0)}" stroke="#1E3A66" stroke-dasharray="4 4"/><path d="${path} L${X(pts.length-1)} ${Y(mn)} L${X(0)} ${Y(mn)}Z" fill="${col}" opacity=".12"/><path d="${path}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${X(pts.length-1)}" cy="${Y(lastV)}" r="4" fill="${col}"/></svg>`;
   // por setup
-  const g={};L.forEach(x=>{const k=x.t.setup||"Sem setup";(g[k]=g[k]||[]).push(x)});
+  const g={};L.forEach(x=>{const k=x.t.setup||"Sem estratégia";(g[k]=g[k]||[]).push(x)});
   const rows=Object.entries(g).map(([k,a])=>{const rs=a.map(x=>x.c.R).filter(r=>r!=null);return {k,n:a.length,r:rs.length?rs.reduce((s,r)=>s+r,0)/rs.length:null,w:a.filter(x=>x.c.total>0).length}}).sort((a,b)=>(b.r??-1e9)-(a.r??-1e9));
   const mr=Math.max(...rows.map(r=>Math.abs(r.r||0)),0.1);
   $("v-desempenho").innerHTML=`
@@ -489,7 +493,7 @@ function renderDesempenho(){
   </div>
   ${Rs.length<L.length?`<p class="hint">A média em R considera só as operações com stop (${Rs.length} de ${L.length}).</p>`:""}
   <div class="card"><div class="ch"><b>Curva de capital</b><span class="sub">${smoney(lastV)}</span></div><div class="chart">${svg}</div></div>
-  <div class="card"><div class="ch"><b>Por setup</b><span class="sub">média em R</span></div><div class="bars">
+  <div class="card"><div class="ch"><b>Por estratégia</b><span class="sub">média em R</span></div><div class="bars">
    ${rows.map(r=>`<div class="l"><span>${esc(r.k)} <small style="color:var(--dim)">(${r.w}/${r.n})</small></span><div class="t"><i style="${(r.r||0)>=0?`left:0;width:${(r.r||0)/mr*100}%;background:var(--up)`:`left:0;width:${Math.abs(r.r)/mr*100}%;background:var(--dn)`}"></i></div><b class="${cls(r.r)}">${rfmt(r.r)}</b></div>`).join("")}
   </div></div>`;
   bindPerf();
@@ -533,7 +537,10 @@ function openSheet(html){$("sheetBody").innerHTML=html;$("sheet").hidden=false;d
 function closeSheet(){$("sheet").hidden=true;document.body.style.overflow=""}
 $("backdrop").onclick=closeSheet;
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("sheet").hidden)closeSheet()});
-document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g){location.hash=g.dataset.go}});
+document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g){location.hash=g.dataset.go;return}
+  const n=e.target.closest("[data-pn]");if(n){const d=Number(n.dataset.d);
+    if(n.dataset.pn==="hist"){if(histMode==="mes")histMonth=shiftM(histMonth,d);else histYear=String(Number(histYear)+d);renderHistorico()}
+    else{perfYear=String(Number(perfYear)+d);renderDesempenho()}}});
 
 route();
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
